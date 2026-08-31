@@ -44,7 +44,7 @@ jobs:
             echo "Building Next.js..."
             npm run build
 
-            echo "Restarting applications..."
+            echo "Restarting applications...."
             pm2 restart data-entry-server
             pm2 restart data-entry-client
 
