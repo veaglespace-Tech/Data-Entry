@@ -31,7 +31,7 @@ jobs:
 
             echo "Installing server dependencies..."
             cd server
-            npm i
+            npm ci
 
             echo "Running Prisma migrations..."
             npx prisma migrate
@@ -39,7 +39,7 @@ jobs:
 
             echo "Installing client dependencies..."
             cd ../client
-            npm i
+            npm ci
 
             echo "Building Next.js..."
             npm run build
