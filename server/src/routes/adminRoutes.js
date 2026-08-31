@@ -35,7 +35,11 @@ router.get(
         id: true,
         name: true,
         email: true,
+        mobile: true,
         role: true,
+        planId: true,
+        planStatus: true,
+        planExpiresAt: true,
         createdAt: true,
         _count: {
           select: {
@@ -105,6 +109,54 @@ router.delete(
   })
 );
 
+// @route   GET /api/admin/users/:id
+// @desc    Get detailed user info including plan and transactions
+// @access  Admin
+router.get(
+  "/users/:id",
+  asyncHandler(async (req, res) => {
+    const userId = parseInt(req.params.id);
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        plan: true,
+        transactions: {
+          orderBy: { createdAt: "desc" },
+        },
+        _count: {
+          select: { forms: true, entries: { where: { form: { userId } } } }
+        }
+      },
+    });
+
+    if (!user) {
+      res.status(404);
+      throw new Error("User not found");
+    }
+
+    // Get total entries
+    const entryCount = await prisma.entry.count({
+      where: { form: { userId } }
+    });
+
+    // Determine plan start date (latest successful transaction)
+    const latestSuccessTxn = user.transactions.find((t) => t.status === "SUCCESS" && t.planId === user.planId);
+    const planStartedAt = latestSuccessTxn ? latestSuccessTxn.createdAt : user.createdAt;
+
+    res.json({
+      success: true,
+      data: {
+        ...user,
+        formsCount: user._count.forms,
+        entriesCount: entryCount,
+        planStartedAt,
+        _count: undefined,
+      },
+    });
+  })
+);
+
 // @route   PUT /api/admin/users/:id/role
 // @desc    Change a user's role
 // @access  Admin
@@ -170,9 +222,15 @@ router.put(
 
     // Prepare update data
     const updateData = { name, email, mobile };
+    
+    let isPlanChanged = false;
 
     if (planId !== undefined) {
-      updateData.planId = planId ? parseInt(planId) : null;
+      const newPlanId = planId ? parseInt(planId) : null;
+      if (user.planId !== newPlanId) {
+        isPlanChanged = true;
+      }
+      updateData.planId = newPlanId;
     }
     if (planStatus !== undefined) {
       updateData.planStatus = planStatus;
@@ -204,6 +262,19 @@ router.put(
         planExpiresAt: true,
       },
     });
+
+    // If admin manually assigned a new plan, create a 0-rupee audit transaction
+    if (isPlanChanged && updateData.planId) {
+      await prisma.transaction.create({
+        data: {
+          txnid: `ADMIN_UPGRADE_${Date.now()}_${userId}`,
+          userId: userId,
+          planId: updateData.planId,
+          amount: 0,
+          status: "SUCCESS",
+        }
+      });
+    }
 
     res.json({
       success: true,

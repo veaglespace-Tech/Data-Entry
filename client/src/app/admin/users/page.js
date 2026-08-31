@@ -7,7 +7,8 @@ import { selectCurrentUser, selectAuthLoading, selectIsAdmin } from "@/redux/sli
 import { useGetUsersQuery, useDeleteUserMutation, useUpdateUserRoleMutation, useUpdateUserDetailsMutation, useGetPlansQuery } from "@/redux/api/apiSlice";
 import Sidebar from "@/components/Sidebar";
 import toast from "react-hot-toast";
-import { Users, Search, Trash2, Shield, User, Star, Edit2, X, Check } from "lucide-react";
+import { Users, Search, Trash2, Shield, User, Star, Edit2, X, Check, Eye } from "lucide-react";
+import Link from "next/link";
 
 export default function AdminUsersPage() {
   const user = useSelector(selectCurrentUser);
@@ -232,10 +233,12 @@ export default function AdminUsersPage() {
                         <tr key={u.id}>
                           <td style={{ color: "#64748b", fontWeight: 600 }}>#{u.id}</td>
                           <td>
-                            <div>
-                              <p style={{ fontWeight: 700, color: "#0f172a" }}>{u.name}</p>
+                            <Link href={`/admin/users/${u.id}`} style={{ textDecoration: 'none', display: 'block' }}>
+                              <p style={{ fontWeight: 700, color: "#0f172a", transition: 'color 0.2s', ':hover': { color: '#3b82f6' } }}>
+                                {u.name}
+                              </p>
                               <p style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>{u.email}</p>
-                            </div>
+                            </Link>
                           </td>
                           <td>
                             <button
@@ -274,6 +277,13 @@ export default function AdminUsersPage() {
                           </td>
                           <td>
                             <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
+                              <Link
+                                href={`/admin/users/${u.id}`}
+                                style={{ color: '#3b82f6', textDecoration: 'none' }}
+                                title="View Details"
+                              >
+                                <Eye size={18} />
+                              </Link>
                               <button
                                 onClick={() => openEditModal(u)}
                                 style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#64748b' }}

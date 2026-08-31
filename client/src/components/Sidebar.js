@@ -343,6 +343,7 @@ export default function Sidebar() {
           cursor: "pointer",
           textAlign: "left",
           transition: "all 0.2s ease",
+          marginBottom: 'auto'
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)";
@@ -354,6 +355,15 @@ export default function Sidebar() {
         <LogOut size={18} />
         Logout
       </button>
+
+      {/* Footer */}
+      <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.06)", textAlign: 'center' }}>
+        <p style={{ fontSize: 10, color: "#64748b", lineHeight: 1.4 }}>
+          Designed & Developed by<br />
+          <strong style={{ color: "#94a3b8" }}>Veagle Space Technology Pvt. Ltd.</strong><br />
+          © 2026 All Rights Reserved.
+        </p>
+      </div>
     </aside>
   );
 }

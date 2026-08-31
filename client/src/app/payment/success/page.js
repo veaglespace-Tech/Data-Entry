@@ -1,13 +1,13 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useDispatch } from "react-redux";
 import { setCredentials } from "@/redux/slice/authSlice";
 import { CheckCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 
-export default function PaymentSuccessPage() {
+function PaymentSuccessContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const dispatch = useDispatch();
@@ -74,5 +74,13 @@ export default function PaymentSuccessPage() {
         }
       `}</style>
     </div>
+  );
+}
+
+export default function PaymentSuccessPage() {
+  return (
+    <Suspense fallback={<div style={{ textAlign: 'center', padding: '100px' }}>Loading payment status...</div>}>
+      <PaymentSuccessContent />
+    </Suspense>
   );
 }

@@ -130,6 +130,10 @@ export const apiSlice = createApi({
       query: (search = '') => `/admin/users${search ? `?search=${search}` : ''}`,
       providesTags: ['User'],
     }),
+    getUserDetails: builder.query({
+      query: (id) => `/admin/users/${id}`,
+      providesTags: (result, error, id) => [{ type: 'User', id }, 'User'],
+    }),
     updateUserRole: builder.mutation({
       query: ({ id, role }) => ({
         url: `/admin/users/${id}/role`,
@@ -239,6 +243,7 @@ export const {
   useUpdateEntryMutation,
   useDeleteEntryMutation,
   useGetUsersQuery,
+  useGetUserDetailsQuery,
   useUpdateUserRoleMutation,
   useDeleteUserMutation,
   useUpdateUserDetailsMutation,
