@@ -76,15 +76,17 @@ export default function Navbar() {
               style={{
                 width: 38,
                 height: 38,
-                borderRadius: 12,
-                background: "linear-gradient(135deg, #2563eb, #3b82f6)",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                boxShadow: "0 4px 12px rgba(37, 99, 235, 0.3)",
               }}
             >
-              <Database size={18} color="white" />
+              <img 
+                src="/veagle-logo.webp" 
+                alt="Main Brand Logo" 
+                className="animate-flip-y"
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              />
             </div>
             <span
               style={{

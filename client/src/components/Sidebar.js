@@ -73,6 +73,21 @@ export default function Sidebar() {
         overflowY: "auto",
       }}
     >
+      {/* Brand Logo */}
+      <div style={{ padding: "0 16px", marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <img 
+            src="/veagle-logo.webp" 
+            alt="Main Brand Logo" 
+            className="animate-flip-y"
+            style={{ width: "100%", height: "100%", objectFit: "contain" }}
+          />
+        </div>
+        <span style={{ fontSize: 22, fontWeight: 800, color: "#f8fafc", letterSpacing: "-0.02em" }}>
+          DataVault
+        </span>
+      </div>
+
       {/* User Profile Card */}
       <div
         style={{
