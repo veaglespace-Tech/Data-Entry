@@ -150,7 +150,7 @@ export default function LandingPage() {
       {/* Footer */}
       <footer style={{ borderTop: '1px solid rgba(15, 23, 42, 0.06)', padding: '48px 24px', textAlign: 'center', background: '#ffffff', position: 'relative', zIndex: 10 }}>
         <p style={{ color: '#64748b', fontSize: 15, fontWeight: 500 }}>
-          © 2024 DataVault SaaS. Built with ❤️ for speed and beauty.
+          Designed & Developed by Veagle Space Technology Pvt. Ltd. | © 2026 All Rights Reserved.
         </p>
       </footer>
     </>

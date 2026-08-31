@@ -277,7 +277,7 @@ export default function SubscriptionPage() {
 
       <footer style={{ borderTop: '1px solid rgba(0,0,0,0.05)', padding: '40px 24px', textAlign: 'center', background: '#ffffff' }}>
         <p style={{ color: '#64748b', fontSize: 15, fontWeight: 500 }}>
-          © 2024 DataVault SaaS. Built with ❤️ for speed and beauty.
+          Designed & Developed by Veagle Space Technology Pvt. Ltd. | © 2026 All Rights Reserved.
         </p>
       </footer>
     </>
