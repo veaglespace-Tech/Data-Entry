@@ -6,6 +6,9 @@ export const metadata = {
   title: "DataVault — Smart Data Entry Platform",
   description: "A modern, beautiful data entry platform. Create custom forms, manage entries, and export data with ease.",
   keywords: "data entry, forms, database, management, export, dashboard",
+  icons: {
+    icon: "/veagle-logo.webp",
+  },
 };
 
 export default function RootLayout({ children }) {
