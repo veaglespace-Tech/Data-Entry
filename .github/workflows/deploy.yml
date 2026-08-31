@@ -26,7 +26,7 @@ jobs:
             cd ~/Data-Entry
 
             echo "Pulling latest code..."
-            git pfetch origin main
+            git fetch origin main
             git reset --hard origin/main
 
             echo "Installing server dependencies..."
