@@ -1,0 +1,53 @@
+name: Deploy Data Entry
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Deploy to VPS
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.HOST }}
+          username: ${{ secrets.USER }}
+          key: ${{ secrets.SSH_KEY }}
+          port: 22
+          timeout: 120s
+          command_timeout: 20m
+
+          script: |
+            set -e
+
+            cd ~/Data-Entry
+
+            echo "Pulling latest code..."
+            git pfetch origin main
+            git reset --hard origin/main
+
+            echo "Installing server dependencies..."
+            cd server
+            npm i
+
+            echo "Running Prisma migrations..."
+            npx prisma migrate
+            npx prisma db push
+
+            echo "Installing client dependencies..."
+            cd ../client
+            npm i
+
+            echo "Building Next.js..."
+            npm run build
+
+            echo "Restarting applications..."
+            pm2 restart data-entry-server
+            pm2 restart data-entry-client
+
+            pm2 save
+
+            echo "Deployment completed successfully!"
