@@ -1,0 +1,94 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id         Int      @id @default(autoincrement())
+  name       String   @db.VarChar(100)
+  email      String   @unique @db.VarChar(255)
+  password   String   @db.VarChar(255)
+  mobile     String?  @db.VarChar(20)
+  role       String   @default("USER") @db.VarChar(20) // "USER" or "ADMIN"
+  planId       Int?
+  planStatus   String   @default("INACTIVE") @db.VarChar(20) // "INACTIVE", "ACTIVE", or "EXPIRED"
+  planExpiresAt DateTime?
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  forms        Form[]
+  transactions Transaction[]
+  plan         Plan?  @relation(fields: [planId], references: [id])
+
+  @@map("users")
+}
+
+model Plan {
+  id          Int      @id @default(autoincrement())
+  name        String   @db.VarChar(100)
+  description String   @db.VarChar(255)
+  price       Int
+  period      String   @db.VarChar(50)
+  features    Json     // Array of features
+  formLimit   Int      // -1 for unlimited
+  entryLimit  Int      // -1 for unlimited
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  users        User[]
+  transactions Transaction[]
+
+  @@map("plans")
+}
+
+model Form {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(255)
+  description String?  @db.Text
+  fields      Json     // Array of field definitions: [{ name, label, type, required, options }]
+  userId      Int
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  entries Entry[]
+
+  @@map("forms")
+}
+
+model Entry {
+  id        Int      @id @default(autoincrement())
+  data      Json     // Key-value pairs matching form fields
+  formId    Int
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  form Form @relation(fields: [formId], references: [id], onDelete: Cascade)
+
+  @@map("entries")
+}
+
+model Transaction {
+  id           Int      @id @default(autoincrement())
+  txnid        String   @unique @db.VarChar(100)
+  userId       Int?
+  planId       Int
+  amount       Float
+  status       String   @default("PENDING") @db.VarChar(20) // PENDING, SUCCESS, FAILED
+  mihpayid     String?  @db.VarChar(100) // PayU transaction ID
+  tempUserData Json?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user User? @relation(fields: [userId], references: [id])
+  plan Plan  @relation(fields: [planId], references: [id])
+
+  @@map("transactions")
+}
