@@ -74,29 +74,7 @@ export default function UserDetailsPage({ params }) {
     return (
       <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
         <Sidebar />
-        <main style={{ flex: 1, padding: '32px 36px', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <div className="spinner">Loading...</div>
-        </main>
-      </div>
-    );
-  }
-
-  if (!targetUser) {
-    return (
-      <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
-        <Sidebar />
-        <main style={{ flex: 1, padding: '32px 36px' }}>
-           <h2>User not found</h2>
-           <Link href="/admin/users">Back to users</Link>
-        </main>
-      </div>
-    );
-  }
-
-  return (
-    <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
-      <Sidebar />
-      <main style={{ flex: 1, padding: '32px 36px', overflowY: 'auto', maxHeight: '100vh' }}>
+        <main style={{ flex: 1, padding: "32px 36px", overflowY: "auto", maxHeight: "100vh" }}>
         
         {/* Top Actions */}
         <div className="animate-fade-in-up" style={{ marginBottom: 32 }}>

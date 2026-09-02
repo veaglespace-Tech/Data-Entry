@@ -39,6 +39,8 @@ model Plan {
   features    Json     // Array of features
   formLimit   Int      // -1 for unlimited
   entryLimit  Int      // -1 for unlimited
+  isActive    Boolean  @default(true)
+  displayOrder Int     @default(0)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
@@ -91,4 +93,13 @@ model Transaction {
   plan Plan  @relation(fields: [planId], references: [id])
 
   @@map("transactions")
+}
+
+model Setting {
+  id        Int      @id @default(autoincrement())
+  key       String   @unique @db.VarChar(100)
+  value     String   @db.VarChar(255)
+  updatedAt DateTime @updatedAt
+
+  @@map("settings")
 }

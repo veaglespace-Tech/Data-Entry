@@ -3,7 +3,7 @@
 import { use, useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { selectCurrentUser, selectAuthLoading } from "@/redux/slice/authSlice";
-import { useInitiatePaymentMutation, useGetPlanQuery, useActivateFreePlanMutation } from "@/redux/api/apiSlice";
+import { useInitiatePaymentMutation, useGetPlanQuery, useActivateFreePlanMutation, useGetGstSettingQuery } from "@/redux/api/apiSlice";
 import { useRouter } from "next/navigation";
 import toast from "react-hot-toast";
 import Navbar from "@/components/Navbar";
@@ -20,6 +20,9 @@ export default function CheckoutPage({ params }) {
 
   const { data: planData, isLoading: isPlanLoading } = useGetPlanQuery(planId);
   const plan = planData?.data;
+
+  const { data: gstData, isLoading: isGstLoading } = useGetGstSettingQuery();
+  const gstPercentage = gstData?.data?.gst ?? 18;
 
   // Retrieve temp registration data if user is not logged in yet
   const [tempUserData, setTempUserData] = useState(null);
@@ -53,7 +56,7 @@ export default function CheckoutPage({ params }) {
   }
 
   // GST Calculation
-  const gstRate = 0.18;
+  const gstRate = gstPercentage / 100;
   const gstAmount = plan.price * gstRate;
   const finalPrice = plan.price + gstAmount;
 
@@ -145,7 +148,7 @@ export default function CheckoutPage({ params }) {
               <span style={{ fontWeight: 500, color: '#0f172a' }}>₹{plan.price.toLocaleString()}</span>
             </div>
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569', fontSize: 16 }}>
-              <span>GST (18%)</span>
+              <span>GST ({gstPercentage}%)</span>
               <span style={{ fontWeight: 500, color: '#0f172a' }}>₹{gstAmount.toLocaleString()}</span>
             </div>
             <div style={{ borderTop: '1px dashed #cbd5e1', margin: '8px 0' }}></div>

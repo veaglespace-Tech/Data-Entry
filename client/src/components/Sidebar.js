@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
@@ -16,7 +17,9 @@ import {
   LogOut,
   CreditCard,
   Star,
-  Shield
+  Shield,
+  Menu,
+  X
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -25,6 +28,7 @@ export default function Sidebar() {
   const user = useSelector(selectCurrentUser);
   const dispatch = useDispatch();
   const router = useRouter();
+  const [isOpen, setIsOpen] = useState(false);
 
   const handleLogout = () => {
     dispatch(logout());
@@ -57,328 +61,361 @@ export default function Sidebar() {
         .slice(0, 2)
     : "U";
 
-  return (
-    <aside
-      style={{
-        width: 272,
-        minHeight: "calc(100vh - 76px)",
-        background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)",
-        padding: "28px 16px 20px",
-        display: "flex",
-        flexDirection: "column",
-        gap: 4,
-        borderRight: "1px solid rgba(255,255,255,0.04)",
-        position: "sticky",
-        top: 76,
-        overflowY: "auto",
-      }}
-    >
-      {/* Brand Logo */}
-      <div style={{ padding: "0 16px", marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
-        <div style={{ width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center" }}>
-          <img 
-            src="/veagle-logo.webp" 
-            alt="Main Brand Logo" 
-            className="animate-flip-y"
-            style={{ width: "100%", height: "100%", objectFit: "contain" }}
-          />
-        </div>
-        <span style={{ fontSize: 22, fontWeight: 800, color: "#f8fafc", letterSpacing: "-0.02em" }}>
-          DataVault
-        </span>
-      </div>
+  // Close sidebar on navigation on mobile
+  const handleNavClick = () => {
+    setIsOpen(false);
+  };
 
-      {/* User Profile Card */}
-      <div
+  return (
+    <>
+      {/* Mobile Toggle Button */}
+      <button
+        onClick={() => setIsOpen(!isOpen)}
+        className="md:hidden fixed top-6 right-6 z-[60] p-2 bg-white rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-slate-200 text-slate-800 transition-all hover:scale-105 active:scale-95"
+      >
+        {isOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+
+      {/* Overlay for mobile */}
+      {isOpen && (
+        <div 
+          className="md:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[45]"
+          onClick={() => setIsOpen(false)}
+        />
+      )}
+
+      <aside
+        className={`fixed md:sticky top-0 left-0 h-screen z-50 transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] flex flex-col flex-shrink-0 hide-scrollbar ${
+          isOpen ? "translate-x-0" : "-translate-x-full md:translate-x-0"
+        }`}
         style={{
-          padding: "16px",
-          borderRadius: 16,
-          background: "rgba(255,255,255,0.04)",
-          border: "1px solid rgba(255,255,255,0.06)",
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          marginBottom: 20,
+          width: 272,
+          background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)",
+          padding: "28px 16px 20px",
+          gap: 4,
+          borderRight: "1px solid rgba(255,255,255,0.04)",
+          overflowY: "auto",
         }}
       >
+        <style jsx>{`
+          .hide-scrollbar::-webkit-scrollbar {
+            display: none;
+          }
+          .hide-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+          }
+        `}</style>
+        {/* Brand Logo */}
+        <div style={{ padding: "0 16px", marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
+          <div style={{ width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center" }}>
+            <img 
+              src="/veagle-logo.webp" 
+              alt="Main Brand Logo" 
+              className="animate-flip-y"
+              style={{ width: "100%", height: "100%", objectFit: "contain" }}
+            />
+          </div>
+          <span style={{ fontSize: 22, fontWeight: 800, color: "#f8fafc", letterSpacing: "-0.02em" }}>
+            DataVault
+          </span>
+        </div>
+
+        {/* User Profile Card */}
         <div
           style={{
-            width: 42,
-            height: 42,
-            borderRadius: 12,
-            background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+            padding: "16px",
+            borderRadius: 16,
+            background: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.06)",
             display: "flex",
             alignItems: "center",
-            justifyContent: "center",
-            color: "white",
-            fontSize: 15,
-            fontWeight: 800,
-            letterSpacing: "0.02em",
-            flexShrink: 0,
-          }}
-        >
-          {initials}
-        </div>
-        <div style={{ overflow: "hidden" }}>
-          <p
-            style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: "#f1f5f9",
-              whiteSpace: "nowrap",
-              textOverflow: "ellipsis",
-              overflow: "hidden",
-            }}
-          >
-            {user?.name || "User"}
-          </p>
-        </div>
-      </div>
-
-      {/* Navigation Label */}
-      <p
-        style={{
-          fontSize: 11,
-          fontWeight: 700,
-          textTransform: "uppercase",
-          letterSpacing: "0.12em",
-          color: "#475569",
-          padding: "0 14px",
-          marginBottom: 8,
-        }}
-      >
-        Main Menu
-      </p>
-
-      {/* Nav Items */}
-      {allItems.map((item, index) => {
-        const isActive =
-          pathname === item.href ||
-          (item.href === "/forms" &&
-            pathname.startsWith("/forms") &&
-            pathname !== "/forms/new");
-        const Icon = item.icon;
-
-        const isFirstAdmin = isAdmin && index === navItems.length;
-
-        return (
-          <div key={item.href}>
-            {isFirstAdmin && (
-              <div style={{ margin: "16px 0 8px" }}>
-                <p
-                  style={{
-                    fontSize: 11,
-                    fontWeight: 700,
-                    textTransform: "uppercase",
-                    letterSpacing: "0.12em",
-                    color: "#475569",
-                    padding: "0 14px",
-                  }}
-                >
-                  Admin
-                </p>
-              </div>
-            )}
-            <Link
-              href={item.href}
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: 12,
-                padding: "11px 14px",
-                borderRadius: 12,
-                fontSize: 14,
-                fontWeight: isActive ? 600 : 500,
-                color: isActive ? "#ffffff" : "#94a3b8",
-                background: isActive
-                  ? "linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.15))"
-                  : "transparent",
-                textDecoration: "none",
-                transition: "all 0.2s ease",
-                position: "relative",
-                border: isActive
-                  ? "1px solid rgba(59,130,246,0.2)"
-                  : "1px solid transparent",
-              }}
-              onMouseEnter={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background =
-                    "rgba(255,255,255,0.04)";
-                  e.currentTarget.style.color = "#e2e8f0";
-                }
-              }}
-              onMouseLeave={(e) => {
-                if (!isActive) {
-                  e.currentTarget.style.background = "transparent";
-                  e.currentTarget.style.color = "#94a3b8";
-                }
-              }}
-            >
-              {isActive && (
-                <div
-                  style={{
-                    position: "absolute",
-                    left: 0,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    width: 3,
-                    height: 20,
-                    borderRadius: "0 4px 4px 0",
-                    background: "linear-gradient(180deg, #3b82f6, #8b5cf6)",
-                  }}
-                />
-              )}
-              <Icon size={18} />
-              {item.label}
-              {isActive && (
-                <ChevronRight
-                  size={14}
-                  style={{ marginLeft: "auto", opacity: 0.5 }}
-                />
-              )}
-            </Link>
-          </div>
-        );
-      })}
-
-      {/* Spacer */}
-      <div style={{ flex: 1 }} />
-
-      {/* Upgrade Card */}
-      {user?.planStatus !== "ACTIVE" && !isAdmin && (
-        <div
-          style={{
-            padding: "20px",
-            borderRadius: 16,
-            background:
-              "linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12))",
-            border: "1px solid rgba(59,130,246,0.15)",
-            textAlign: "center",
+            gap: 12,
+            marginBottom: 20,
           }}
         >
           <div
             style={{
-              width: 40,
-              height: 40,
+              width: 42,
+              height: 42,
               borderRadius: 12,
               background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              margin: "0 auto 12px",
-              boxShadow: "0 4px 15px rgba(59,130,246,0.3)",
-            }}
-          >
-            <Sparkles size={18} color="white" />
-          </div>
-          <h4
-            style={{
-              fontSize: 14,
-              fontWeight: 700,
-              color: "#f1f5f9",
-              marginBottom: 6,
-            }}
-          >
-            Upgrade to Pro
-          </h4>
-          <p
-            style={{
-              fontSize: 12,
-              color: "#64748b",
-              lineHeight: 1.5,
-              marginBottom: 14,
-            }}
-          >
-            Unlock unlimited forms & analytics
-          </p>
-          <Link
-            href="/subscription"
-            style={{
-              display: "block",
-              padding: "9px 16px",
-              fontSize: 13,
-              fontWeight: 700,
-              background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
               color: "white",
-              borderRadius: 10,
-              textDecoration: "none",
-              textAlign: "center",
-              transition: "all 0.2s ease",
-              boxShadow: "0 4px 12px rgba(59,130,246,0.3)",
+              fontSize: 15,
+              fontWeight: 800,
+              letterSpacing: "0.02em",
+              flexShrink: 0,
             }}
           >
-            Upgrade Now
-          </Link>
+            {initials}
+          </div>
+          <div style={{ overflow: "hidden" }}>
+            <p
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#f1f5f9",
+                whiteSpace: "nowrap",
+                textOverflow: "ellipsis",
+                overflow: "hidden",
+              }}
+            >
+              {user?.name || "User"}
+            </p>
+          </div>
         </div>
-      )}
 
-      {/* Settings Link */}
-      <Link
-        href="/settings"
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          padding: "11px 14px",
-          borderRadius: 12,
-          fontSize: 14,
-          fontWeight: 500,
-          color: "#64748b",
-          textDecoration: "none",
-          transition: "all 0.2s ease",
-          marginTop: 8,
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-          e.currentTarget.style.color = "#e2e8f0";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "transparent";
-          e.currentTarget.style.color = "#64748b";
-        }}
-      >
-        <Settings size={18} />
-        Settings
-      </Link>
-
-      {/* Logout Button */}
-      <button
-        onClick={handleLogout}
-        style={{
-          display: "flex",
-          alignItems: "center",
-          gap: 12,
-          padding: "11px 14px",
-          borderRadius: 12,
-          fontSize: 14,
-          fontWeight: 500,
-          color: "#ef4444",
-          background: "transparent",
-          border: "none",
-          cursor: "pointer",
-          textAlign: "left",
-          transition: "all 0.2s ease",
-          marginBottom: 'auto'
-        }}
-        onMouseEnter={(e) => {
-          e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)";
-        }}
-        onMouseLeave={(e) => {
-          e.currentTarget.style.background = "transparent";
-        }}
-      >
-        <LogOut size={18} />
-        Logout
-      </button>
-
-      {/* Footer */}
-      <div style={{ marginTop: 24, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.06)", textAlign: 'center' }}>
-        <p style={{ fontSize: 10, color: "#64748b", lineHeight: 1.4 }}>
-          Designed & Developed by<br />
-          <strong style={{ color: "#94a3b8" }}>Veagle Space Technology Pvt. Ltd.</strong><br />
-          © 2026 All Rights Reserved.
+        {/* Navigation Label */}
+        <p
+          style={{
+            fontSize: 11,
+            fontWeight: 700,
+            textTransform: "uppercase",
+            letterSpacing: "0.12em",
+            color: "#475569",
+            padding: "0 14px",
+            marginBottom: 8,
+          }}
+        >
+          Main Menu
         </p>
-      </div>
-    </aside>
+
+        {/* Nav Items */}
+        {allItems.map((item, index) => {
+          const isActive =
+            pathname === item.href ||
+            (item.href === "/forms" &&
+              pathname.startsWith("/forms") &&
+              pathname !== "/forms/new");
+          const Icon = item.icon;
+
+          const isFirstAdmin = isAdmin && index === navItems.length;
+
+          return (
+            <div key={item.href}>
+              {isFirstAdmin && (
+                <div style={{ margin: "16px 0 8px" }}>
+                  <p
+                    style={{
+                      fontSize: 11,
+                      fontWeight: 700,
+                      textTransform: "uppercase",
+                      letterSpacing: "0.12em",
+                      color: "#475569",
+                      padding: "0 14px",
+                    }}
+                  >
+                    Admin
+                  </p>
+                </div>
+              )}
+              <Link
+                href={item.href}
+                onClick={handleNavClick}
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 12,
+                  padding: "11px 14px",
+                  borderRadius: 12,
+                  fontSize: 14,
+                  fontWeight: isActive ? 600 : 500,
+                  color: isActive ? "#ffffff" : "#94a3b8",
+                  background: isActive
+                    ? "linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.15))"
+                    : "transparent",
+                  textDecoration: "none",
+                  transition: "all 0.2s ease",
+                  position: "relative",
+                  border: isActive
+                    ? "1px solid rgba(59,130,246,0.2)"
+                    : "1px solid transparent",
+                }}
+                onMouseEnter={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background =
+                      "rgba(255,255,255,0.04)";
+                    e.currentTarget.style.color = "#e2e8f0";
+                  }
+                }}
+                onMouseLeave={(e) => {
+                  if (!isActive) {
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "#94a3b8";
+                  }
+                }}
+              >
+                {isActive && (
+                  <div
+                    style={{
+                      position: "absolute",
+                      left: 0,
+                      top: "50%",
+                      transform: "translateY(-50%)",
+                      width: 3,
+                      height: 20,
+                      borderRadius: "0 4px 4px 0",
+                      background: "linear-gradient(180deg, #3b82f6, #8b5cf6)",
+                    }}
+                  />
+                )}
+                <Icon size={18} />
+                {item.label}
+                {isActive && (
+                  <ChevronRight
+                    size={14}
+                    style={{ marginLeft: "auto", opacity: 0.5 }}
+                  />
+                )}
+              </Link>
+            </div>
+          );
+        })}
+
+        {/* Spacer */}
+        <div style={{ flex: 1, minHeight: 20 }} />
+
+        {/* Upgrade Card */}
+        {user?.planStatus !== "ACTIVE" && !isAdmin && (
+          <div
+            style={{
+              padding: "20px",
+              borderRadius: 16,
+              background:
+                "linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12))",
+              border: "1px solid rgba(59,130,246,0.15)",
+              textAlign: "center",
+              marginBottom: 16
+            }}
+          >
+            <div
+              style={{
+                width: 40,
+                height: 40,
+                borderRadius: 12,
+                background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                margin: "0 auto 12px",
+                boxShadow: "0 4px 15px rgba(59,130,246,0.3)",
+              }}
+            >
+              <Sparkles size={18} color="white" />
+            </div>
+            <h4
+              style={{
+                fontSize: 14,
+                fontWeight: 700,
+                color: "#f1f5f9",
+                marginBottom: 6,
+              }}
+            >
+              Upgrade to Pro
+            </h4>
+            <p
+              style={{
+                fontSize: 12,
+                color: "#64748b",
+                lineHeight: 1.5,
+                marginBottom: 14,
+              }}
+            >
+              Unlock unlimited forms & analytics
+            </p>
+            <Link
+              href="/subscription"
+              onClick={handleNavClick}
+              style={{
+                display: "block",
+                padding: "9px 16px",
+                fontSize: 13,
+                fontWeight: 700,
+                background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
+                color: "white",
+                borderRadius: 10,
+                textDecoration: "none",
+                textAlign: "center",
+                transition: "all 0.2s ease",
+                boxShadow: "0 4px 12px rgba(59,130,246,0.3)",
+              }}
+            >
+              Upgrade Now
+            </Link>
+          </div>
+        )}
+
+        {/* Settings Link */}
+        <Link
+          href="/settings"
+          onClick={handleNavClick}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "11px 14px",
+            borderRadius: 12,
+            fontSize: 14,
+            fontWeight: 500,
+            color: "#64748b",
+            textDecoration: "none",
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(255,255,255,0.04)";
+            e.currentTarget.style.color = "#e2e8f0";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+            e.currentTarget.style.color = "#64748b";
+          }}
+        >
+          <Settings size={18} />
+          Settings
+        </Link>
+
+        {/* Logout Button */}
+        <button
+          onClick={handleLogout}
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            padding: "11px 14px",
+            borderRadius: 12,
+            fontSize: 14,
+            fontWeight: 500,
+            color: "#ef4444",
+            background: "transparent",
+            border: "none",
+            cursor: "pointer",
+            textAlign: "left",
+            transition: "all 0.2s ease",
+          }}
+          onMouseEnter={(e) => {
+            e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)";
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.background = "transparent";
+          }}
+        >
+          <LogOut size={18} />
+          Logout
+        </button>
+
+        {/* Footer */}
+        <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.06)", textAlign: 'center' }}>
+          <p style={{ fontSize: 10, color: "#64748b", lineHeight: 1.4 }}>
+            Designed & Developed by<br />
+            <strong style={{ color: "#94a3b8" }}>Veagle Space Technology Pvt. Ltd.</strong><br />
+            © 2026 All Rights Reserved.
+          </p>
+        </div>
+      </aside>
+    </>
   );
 }
+

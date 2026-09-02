@@ -29,7 +29,7 @@ const baseQueryWithReauth = async (args, api, extraOptions) => {
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Auth', 'Form', 'Entry', 'User', 'Stats', 'AdminForms', 'AdminTransactions', 'AdminPlans'],
+  tagTypes: ['Auth', 'Form', 'Entry', 'User', 'Stats', 'AdminForms', 'AdminTransactions', 'AdminPlans', 'Settings'],
   endpoints: (builder) => ({
     // Endpoints will be injected from other files, but we can define some here as well.
     
@@ -225,6 +225,20 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['AdminPlans'],
     }),
+
+    // -- SETTINGS ENDPOINTS --
+    getGstSetting: builder.query({
+      query: () => '/plans/settings/gst',
+      providesTags: ['Settings'],
+    }),
+    updateGstSetting: builder.mutation({
+      query: (data) => ({
+        url: '/admin/settings/gst',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Settings'],
+    }),
   }),
 });
 
@@ -258,4 +272,6 @@ export const {
   useCreateAdminPlanMutation,
   useUpdateAdminPlanMutation,
   useDeleteAdminPlanMutation,
+  useGetGstSettingQuery,
+  useUpdateGstSettingMutation,
 } = apiSlice;

@@ -103,11 +103,7 @@ export default function FormBuilder({ fields, setFields }) {
 
           {/* Field inputs */}
           <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 12,
-            }}
+            className="grid grid-cols-1 md:grid-cols-2 gap-3"
           >
             <div>
               <label className="form-label">Field Label *</label>

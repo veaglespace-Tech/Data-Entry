@@ -36,7 +36,7 @@ export default function AdminTransactionsPage() {
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
       <Sidebar />
-      <main style={{ flex: 1, padding: '32px 36px', overflowY: 'auto', maxHeight: '100vh' }}>
+      <main style={{ flex: 1, padding: "32px 36px", overflowY: "auto", maxHeight: "100vh" }}>
           {/* Header */}
           <div className="animate-fade-in-up" style={{ marginBottom: 40 }}>
             <h1 style={{ fontSize: 32, fontWeight: 800, color: "#0f172a", display: "flex", alignItems: "center", gap: 16, letterSpacing: '-0.02em' }}>

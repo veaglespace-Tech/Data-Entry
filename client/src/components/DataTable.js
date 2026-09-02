@@ -22,23 +22,15 @@ export default function DataTable({
   };
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+    <div className="flex flex-col gap-4">
       {/* Toolbar */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          gap: 12,
-          flexWrap: "wrap",
-        }}
-      >
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
         {/* Search */}
         <form
           onSubmit={handleSearch}
-          style={{ display: "flex", gap: 8, flex: 1, maxWidth: 400 }}
+          className="flex gap-2 w-full sm:max-w-[400px]"
         >
-          <div style={{ position: "relative", flex: 1 }}>
+          <div className="relative flex-1">
             <Search
               size={16}
               style={{
@@ -171,15 +163,7 @@ export default function DataTable({
 
       {/* Pagination */}
       {pagination && pagination.totalPages > 1 && (
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            flexWrap: "wrap",
-            gap: 12,
-          }}
-        >
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
           <p style={{ fontSize: 13, color: "#64748b" }}>
             Showing{" "}
             <span style={{ color: "#94a3b8", fontWeight: 600 }}>

@@ -112,7 +112,7 @@ export default function LandingPage() {
           <p style={{ fontSize: 20, color: '#64748b', maxWidth: 640, margin: '0 auto', lineHeight: 1.6 }}>Powerful tools designed to streamline your workflow and boost your productivity effortlessly.</p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(340px, 1fr))', gap: 32 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 32 }}>
           {features.map((feature, index) => {
             const Icon = feature.icon;
             return (

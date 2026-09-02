@@ -107,6 +107,19 @@ async function main() {
     console.log("Admin user already existed, credentials updated.");
   }
 
+  // 3. Seed Global Settings
+  console.log("Seeding global settings...");
+  const gstSetting = await prisma.setting.findUnique({
+    where: { key: "GST_PERCENTAGE" },
+  });
+
+  if (!gstSetting) {
+    await prisma.setting.create({
+      data: { key: "GST_PERCENTAGE", value: "18" },
+    });
+    console.log("Default GST set to 18%.");
+  }
+
   console.log("Seed completed successfully!");
 }
 

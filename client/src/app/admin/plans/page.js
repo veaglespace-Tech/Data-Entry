@@ -8,7 +8,9 @@ import {
   useGetAdminPlansQuery, 
   useCreateAdminPlanMutation,
   useUpdateAdminPlanMutation,
-  useDeleteAdminPlanMutation
+  useDeleteAdminPlanMutation,
+  useGetGstSettingQuery,
+  useUpdateGstSettingMutation
 } from "@/redux/api/apiSlice";
 import Sidebar from "@/components/Sidebar";
 import toast from "react-hot-toast";
@@ -25,8 +27,19 @@ export default function AdminPlansPage() {
   const [updatePlan] = useUpdateAdminPlanMutation();
   const [deletePlan] = useDeleteAdminPlanMutation();
 
+  const { data: gstData, isLoading: isGstLoading } = useGetGstSettingQuery(undefined, { skip: !isAdmin });
+  const [updateGst, { isLoading: isUpdatingGst }] = useUpdateGstSettingMutation();
+
   const plans = data?.data || [];
-  const loading = authLoading || isLoading;
+  const loading = authLoading || isLoading || isGstLoading;
+
+  const [gstValue, setGstValue] = useState(18);
+
+  useEffect(() => {
+    if (gstData?.data?.gst !== undefined) {
+      setGstValue(gstData.data.gst);
+    }
+  }, [gstData]);
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -40,7 +53,9 @@ export default function AdminPlansPage() {
     period: "monthly",
     features: "", // We'll store as string and split by newline for JSON
     formLimit: -1,
-    entryLimit: -1
+    entryLimit: -1,
+    isActive: true,
+    displayOrder: 0
   });
 
   useEffect(() => {
@@ -62,12 +77,14 @@ export default function AdminPlansPage() {
         period: plan.period,
         features: Array.isArray(plan.features) ? plan.features.join("\n") : "",
         formLimit: plan.formLimit,
-        entryLimit: plan.entryLimit
+        entryLimit: plan.entryLimit,
+        isActive: plan.isActive !== undefined ? plan.isActive : true,
+        displayOrder: plan.displayOrder || 0
       });
     } else {
       setEditingPlan(null);
       setFormData({
-        name: "", description: "", price: 0, period: "monthly", features: "", formLimit: -1, entryLimit: -1
+        name: "", description: "", price: 0, period: "monthly", features: "", formLimit: -1, entryLimit: -1, isActive: true, displayOrder: 0
       });
     }
     setIsModalOpen(true);
@@ -85,7 +102,8 @@ export default function AdminPlansPage() {
       features: formData.features.split("\n").filter(f => f.trim() !== ""),
       price: parseInt(formData.price),
       formLimit: parseInt(formData.formLimit),
-      entryLimit: parseInt(formData.entryLimit)
+      entryLimit: parseInt(formData.entryLimit),
+      displayOrder: parseInt(formData.displayOrder)
     };
 
     try {
@@ -119,6 +137,15 @@ export default function AdminPlansPage() {
     }
   };
 
+  const handleUpdateGst = async () => {
+    try {
+      await updateGst({ gst: parseFloat(gstValue) }).unwrap();
+      toast.success("Global GST updated successfully");
+    } catch (error) {
+      toast.error(error.data?.message || "Failed to update GST");
+    }
+  };
+
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
       <Sidebar />
@@ -147,6 +174,37 @@ export default function AdminPlansPage() {
             </button>
           </div>
 
+          {/* Global GST Settings */}
+          <div className="glass-card animate-fade-in-up" style={{ padding: 24, marginBottom: 40, animationDelay: "0.05s", display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderLeft: '4px solid #8b5cf6' }}>
+            <div>
+              <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: 0, marginBottom: 4 }}>Global GST Configuration</h3>
+              <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>This tax percentage is applied to all plan purchases during checkout.</p>
+            </div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+              <div style={{ position: 'relative', width: 120 }}>
+                <input 
+                  type="number" 
+                  className="form-control" 
+                  value={gstValue} 
+                  onChange={(e) => setGstValue(e.target.value)} 
+                  min="0"
+                  max="100"
+                  step="0.01"
+                  style={{ paddingRight: 32 }}
+                />
+                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#64748b', fontWeight: 600 }}>%</span>
+              </div>
+              <button 
+                onClick={handleUpdateGst}
+                disabled={isUpdatingGst}
+                className="btn-primary"
+                style={{ padding: '11px 20px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}
+              >
+                {isUpdatingGst ? "Saving..." : "Update"}
+              </button>
+            </div>
+          </div>
+
           {/* Table */}
           <div className="glass-card animate-fade-in-up" style={{ padding: 32, animationDelay: "0.1s" }}>
             {loading ? (
@@ -160,6 +218,7 @@ export default function AdminPlansPage() {
                       <th>Price & Period</th>
                       <th>Limits</th>
                       <th>Active Users</th>
+                      <th>Status</th>
                       <th style={{ textAlign: "center" }}>Actions</th>
                     </tr>
                   </thead>
@@ -202,6 +261,23 @@ export default function AdminPlansPage() {
                             </span>
                           </td>
                           <td>
+                            <span style={{ 
+                              display: 'inline-flex', 
+                              alignItems: 'center', 
+                              padding: '6px 12px', 
+                              borderRadius: 100, 
+                              fontSize: 13, 
+                              fontWeight: 700,
+                              background: p.isActive !== false ? 'rgba(34,197,94,0.1)' : 'rgba(148,163,184,0.1)', 
+                              color: p.isActive !== false ? '#16a34a' : '#64748b',
+                            }}>
+                              {p.isActive !== false ? 'Active' : 'Inactive'}
+                            </span>
+                            <div style={{ fontSize: 12, color: '#94a3b8', marginTop: 4, textAlign: 'center' }}>
+                              Order: {p.displayOrder || 0}
+                            </div>
+                          </td>
+                          <td>
                             <div style={{ display: "flex", justifyContent: "center", gap: 12 }}>
                               <button
                                 onClick={() => handleOpenModal(p)}
@@ -232,7 +308,7 @@ export default function AdminPlansPage() {
           {/* Modal */}
           {isModalOpen && (
             <div style={{ position: 'fixed', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(15, 23, 42, 0.4)', backdropFilter: 'blur(8px)', zIndex: 1000, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: 24 }}>
-              <div className="glass-card animate-fade-in-up" style={{ width: '100%', maxWidth: 600, background: 'white', borderRadius: 24, padding: 0, overflow: 'hidden' }}>
+              <div className="glass-card animate-fade-in-up" style={{ width: '100%', maxWidth: 600, maxHeight: '90vh', background: 'white', borderRadius: 24, padding: 0, overflowY: 'auto' }}>
                 <div style={{ padding: '24px 32px', borderBottom: '1px solid rgba(15,23,42,0.06)', display: 'flex', alignItems: 'center', justifyContent: 'space-between', background: '#f8fafc' }}>
                   <h2 style={{ fontSize: 20, fontWeight: 700, margin: 0, color: '#0f172a' }}>
                     {editingPlan ? 'Edit Subscription Plan' : 'Create New Plan'}
@@ -291,6 +367,30 @@ export default function AdminPlansPage() {
                       placeholder="Unlimited Forms&#10;Advanced Analytics&#10;Priority Support" 
                       style={{ resize: 'none' }}
                     />
+                  </div>
+
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
+                    <div className="form-group" style={{ marginBottom: 0, display: 'flex', alignItems: 'center', gap: 12 }}>
+                      <input 
+                        type="checkbox" 
+                        id="isActive" 
+                        checked={formData.isActive} 
+                        onChange={e => setFormData({...formData, isActive: e.target.checked})}
+                        style={{ width: 20, height: 20, cursor: 'pointer' }}
+                      />
+                      <label htmlFor="isActive" className="form-label" style={{ margin: 0, cursor: 'pointer' }}>Plan is Active (Public)</label>
+                    </div>
+                    <div className="form-group" style={{ marginBottom: 0 }}>
+                      <label className="form-label">Display Order</label>
+                      <input 
+                        type="number" 
+                        className="form-control" 
+                        value={formData.displayOrder} 
+                        onChange={e => setFormData({...formData, displayOrder: e.target.value})} 
+                        required 
+                      />
+                      <p style={{ fontSize: 12, color: '#94a3b8', marginTop: 4 }}>Lower numbers appear first.</p>
+                    </div>
                   </div>
 
                   <div style={{ display: 'flex', justifyContent: 'flex-end', gap: 12, marginTop: 16 }}>

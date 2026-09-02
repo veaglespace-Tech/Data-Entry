@@ -384,12 +384,15 @@ router.get(
   "/plans",
   asyncHandler(async (req, res) => {
     const plans = await prisma.plan.findMany({
-      orderBy: { price: "asc" },
       include: {
         _count: {
           select: { users: true }
         }
-      }
+      },
+      orderBy: [
+        { displayOrder: 'asc' },
+        { price: 'asc' }
+      ]
     });
     res.json({ success: true, data: plans });
   })
@@ -401,17 +404,19 @@ router.get(
 router.post(
   "/plans",
   asyncHandler(async (req, res) => {
-    const { name, description, price, period, features, formLimit, entryLimit } = req.body;
+    const { name, description, price, period, features, formLimit, entryLimit, isActive, displayOrder } = req.body;
 
     const plan = await prisma.plan.create({
       data: {
         name,
         description,
-        price: parseInt(price),
+        price,
         period,
         features,
-        formLimit: parseInt(formLimit),
-        entryLimit: parseInt(entryLimit)
+        formLimit,
+        entryLimit,
+        isActive: isActive !== undefined ? isActive : true,
+        displayOrder: displayOrder !== undefined ? displayOrder : 0
       }
     });
 
@@ -426,7 +431,7 @@ router.put(
   "/plans/:id",
   asyncHandler(async (req, res) => {
     const planId = parseInt(req.params.id);
-    const { name, description, price, period, features, formLimit, entryLimit } = req.body;
+    const { name, description, price, period, features, formLimit, entryLimit, isActive, displayOrder } = req.body;
 
     const planExists = await prisma.plan.findUnique({ where: { id: planId } });
     if (!planExists) {
@@ -434,20 +439,22 @@ router.put(
       throw new Error("Plan not found");
     }
 
-    const updatedPlan = await prisma.plan.update({
+    const plan = await prisma.plan.update({
       where: { id: planId },
       data: {
         name,
         description,
-        price: parseInt(price),
+        price,
         period,
         features,
-        formLimit: parseInt(formLimit),
-        entryLimit: parseInt(entryLimit)
+        formLimit,
+        entryLimit,
+        isActive,
+        displayOrder
       }
     });
 
-    res.json({ success: true, data: updatedPlan });
+    res.json({ success: true, data: plan });
   })
 );
 
@@ -477,6 +484,48 @@ router.delete(
 
     await prisma.plan.delete({ where: { id: planId } });
     res.json({ success: true, message: "Plan deleted successfully" });
+  })
+);
+
+// ==========================================
+// ADMIN SETTINGS
+// ==========================================
+
+// @route   PUT /api/admin/settings/gst
+// @desc    Update global GST percentage
+// @access  Admin
+router.put(
+  "/settings/gst",
+  asyncHandler(async (req, res) => {
+    const { gst } = req.body;
+
+    if (gst === undefined || isNaN(parseFloat(gst))) {
+      res.status(400);
+      throw new Error("Please provide a valid GST percentage");
+    }
+
+    const updatedSetting = await prisma.setting.upsert({
+      where: { key: "GST_PERCENTAGE" },
+      update: { value: String(gst) },
+      create: { key: "GST_PERCENTAGE", value: String(gst) },
+    });
+
+    res.json({ success: true, data: { gst: parseFloat(updatedSetting.value) }, message: "GST updated successfully" });
+  })
+);
+
+// @route   GET /api/admin/settings/gst
+// @desc    Get global GST percentage
+// @access  Admin
+router.get(
+  "/settings/gst",
+  asyncHandler(async (req, res) => {
+    const gstSetting = await prisma.setting.findUnique({
+      where: { key: "GST_PERCENTAGE" },
+    });
+    
+    const gstValue = gstSetting ? parseFloat(gstSetting.value) : 18;
+    res.json({ success: true, data: { gst: gstValue } });
   })
 );
 
