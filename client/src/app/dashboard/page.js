@@ -15,6 +15,7 @@ import {
   Clock,
   ArrowUpRight,
   CalendarDays,
+  Shield,
 } from "lucide-react";
 import {
   BarChart,
@@ -140,34 +141,54 @@ export default function DashboardPage() {
             </p>
           </div>
 
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 8,
-              background: "#ffffff",
-              padding: "8px 16px",
-              borderRadius: 12,
-              border: "1px solid rgba(0,0,0,0.05)",
-              fontSize: 13,
-              fontWeight: 600,
-              color: "#64748b",
-            }}
-          >
+          {user.role === "ADMIN" ? (
             <div
               style={{
-                width: 8,
-                height: 8,
-                borderRadius: "50%",
-                background: user.planStatus === "ACTIVE" ? "#10b981" : "#f59e0b",
-                boxShadow:
-                  user.planStatus === "ACTIVE"
-                    ? "0 0 8px rgba(16,185,129,0.5)"
-                    : "0 0 8px rgba(245,158,11,0.5)",
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "linear-gradient(135deg, rgba(59,130,246,0.1), rgba(139,92,246,0.1))",
+                border: "1px solid rgba(59,130,246,0.25)",
+                padding: "8px 16px",
+                borderRadius: 12,
+                fontSize: 13,
+                fontWeight: 700,
+                color: "#2563eb",
               }}
-            />
-            Plan: {user.planStatus === "ACTIVE" ? "Active" : "Inactive"}
-          </div>
+            >
+              <Shield size={16} color="#2563eb" />
+              Super Admin (Owner)
+            </div>
+          ) : (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 8,
+                background: "#ffffff",
+                padding: "8px 16px",
+                borderRadius: 12,
+                border: "1px solid rgba(0,0,0,0.05)",
+                fontSize: 13,
+                fontWeight: 600,
+                color: "#64748b",
+              }}
+            >
+              <div
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  background: user.planStatus === "ACTIVE" ? "#10b981" : "#f59e0b",
+                  boxShadow:
+                    user.planStatus === "ACTIVE"
+                      ? "0 0 8px rgba(16,185,129,0.5)"
+                      : "0 0 8px rgba(245,158,11,0.5)",
+                }}
+              />
+              Plan: {user.planStatus === "ACTIVE" ? "Active" : "Inactive"}
+            </div>
+          )}
         </div>
 
         {loading ? (
@@ -209,14 +230,14 @@ export default function DashboardPage() {
                 value={stats?.totalForms || 0}
                 icon={FileText}
                 color="indigo"
-                subtitle="Custom forms created"
+                subtitle={stats?.isAdmin ? "All system forms created" : "Custom forms created"}
               />
               <StatsCard
                 title="Total Entries"
                 value={stats?.totalEntries || 0}
                 icon={Database}
                 color="violet"
-                subtitle="Data entries recorded"
+                subtitle={stats?.isAdmin ? "All data entries recorded" : "Data entries recorded"}
               />
               <StatsCard
                 title="Active Today"
@@ -236,7 +257,7 @@ export default function DashboardPage() {
                   value={stats.totalUsers || 0}
                   icon={Users}
                   color="amber"
-                  subtitle="Registered users"
+                  subtitle="Registered platform users"
                 />
               )}
             </div>

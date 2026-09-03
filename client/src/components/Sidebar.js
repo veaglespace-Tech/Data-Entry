@@ -36,21 +36,22 @@ export default function Sidebar() {
     router.push("/");
   };
 
-  const navItems = [
+  const userNavItems = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "My Forms", href: "/forms", icon: FileText },
     { label: "New Form", href: "/forms/new", icon: Plus },
     { label: "My Subscription", href: "/dashboard/subscription", icon: CreditCard },
   ];
 
-  const adminItems = [
+  const adminNavItems = [
+    { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "Manage Users", href: "/admin/users", icon: Users },
     { label: "System Forms", href: "/admin/forms", icon: Shield },
     { label: "Transactions", href: "/admin/transactions", icon: CreditCard },
     { label: "Manage Plans", href: "/admin/plans", icon: Star },
   ];
 
-  const allItems = isAdmin ? [...navItems, ...adminItems] : navItems;
+  const allItems = isAdmin ? adminNavItems : userNavItems;
 
   // Get user initials
   const initials = user?.name
@@ -162,10 +163,24 @@ export default function Sidebar() {
                 whiteSpace: "nowrap",
                 textOverflow: "ellipsis",
                 overflow: "hidden",
+                margin: 0,
               }}
             >
               {user?.name || "User"}
             </p>
+            <span
+              style={{
+                fontSize: 11,
+                fontWeight: 600,
+                color: isAdmin ? "#38bdf8" : "#94a3b8",
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 4,
+                marginTop: 2,
+              }}
+            >
+              {isAdmin ? "Super Admin" : "User Account"}
+            </span>
           </div>
         </div>
 
@@ -181,38 +196,24 @@ export default function Sidebar() {
             marginBottom: 8,
           }}
         >
-          Main Menu
+          {isAdmin ? "Admin Console" : "Main Menu"}
         </p>
 
         {/* Nav Items */}
-        {allItems.map((item, index) => {
+        {allItems.map((item) => {
           const isActive =
             pathname === item.href ||
             (item.href === "/forms" &&
               pathname.startsWith("/forms") &&
-              pathname !== "/forms/new");
+              pathname !== "/forms/new") ||
+            (item.href === "/admin/forms" &&
+              pathname.startsWith("/admin/forms")) ||
+            (item.href === "/admin/users" &&
+              pathname.startsWith("/admin/users"));
           const Icon = item.icon;
-
-          const isFirstAdmin = isAdmin && index === navItems.length;
 
           return (
             <div key={item.href}>
-              {isFirstAdmin && (
-                <div style={{ margin: "16px 0 8px" }}>
-                  <p
-                    style={{
-                      fontSize: 11,
-                      fontWeight: 700,
-                      textTransform: "uppercase",
-                      letterSpacing: "0.12em",
-                      color: "#475569",
-                      padding: "0 14px",
-                    }}
-                  >
-                    Admin
-                  </p>
-                </div>
-              )}
               <Link
                 href={item.href}
                 onClick={handleNavClick}

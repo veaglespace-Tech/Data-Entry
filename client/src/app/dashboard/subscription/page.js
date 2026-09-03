@@ -28,7 +28,9 @@ export default function DashboardSubscriptionPage() {
   }, [meData, dispatch, token]);
 
   useEffect(() => {
-    if (!user && !meLoading) {
+    if (user?.role === "ADMIN") {
+      router.push("/dashboard");
+    } else if (!user && !meLoading) {
       router.push("/login");
     }
   }, [user, meLoading, router]);
