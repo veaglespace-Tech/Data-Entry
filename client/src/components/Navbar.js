@@ -101,59 +101,55 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Center: Desktop Nav Links in Floating Capsule */}
-          <div
-            className="desktop-nav-center"
-            style={{
-              display: "flex",
-              alignItems: "center",
-              gap: 6,
-              background: "rgba(15, 23, 42, 0.04)",
-              padding: "5px 6px",
-              borderRadius: 100,
-              border: "1px solid rgba(15, 23, 42, 0.05)",
-            }}
-          >
-            {navLinks.map((link) => {
-              const isActive = pathname === link.path;
-              return (
-                <Link
-                  key={link.name}
-                  href={link.path}
-                  style={{
-                    textDecoration: "none",
-                    fontSize: 14,
-                    fontWeight: isActive ? 700 : 600,
-                    color: isActive ? "#2563eb" : "#64748b",
-                    padding: "7px 18px",
-                    borderRadius: 100,
-                    background: isActive ? "#ffffff" : "transparent",
-                    boxShadow: isActive ? "0 2px 8px rgba(0,0,0,0.06)" : "none",
-                    transition: "all 0.2s ease",
-                  }}
-                  onMouseEnter={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.color = "#0f172a";
-                      e.currentTarget.style.background = "rgba(255, 255, 255, 0.6)";
-                    }
-                  }}
-                  onMouseLeave={(e) => {
-                    if (!isActive) {
-                      e.currentTarget.style.color = "#64748b";
-                      e.currentTarget.style.background = "transparent";
-                    }
-                  }}
-                >
-                  {link.name}
-                </Link>
-              );
-            })}
-          </div>
+          {/* Desktop Links */}
+          <div className="desktop-nav" style={{ display: "flex", alignItems: "center", gap: 32 }}>
+            <div style={{ display: "flex", alignItems: "center", gap: 28 }}>
+              {navLinks.map((link) => {
+                const isActive = pathname === link.path;
+                return (
+                  <Link
+                    key={link.name}
+                    href={link.path}
+                    style={{
+                      textDecoration: "none",
+                      fontSize: 14,
+                      fontWeight: isActive ? 700 : 600,
+                      color: isActive ? "#2563eb" : "#64748b",
+                      position: "relative",
+                      transition: "color 0.2s ease",
+                      padding: "6px 0",
+                    }}
+                    onMouseEnter={(e) => {
+                      if (!isActive) e.currentTarget.style.color = "#0f172a";
+                    }}
+                    onMouseLeave={(e) => {
+                      if (!isActive) e.currentTarget.style.color = "#64748b";
+                    }}
+                  >
+                    {link.name}
+                    {isActive && (
+                      <div
+                        style={{
+                          position: "absolute",
+                          bottom: 0,
+                          left: "50%",
+                          transform: "translateX(-50%)",
+                          width: 16,
+                          height: 3,
+                          borderRadius: 2,
+                          background: "#2563eb",
+                        }}
+                      />
+                    )}
+                  </Link>
+                );
+              })}
+            </div>
 
-          {/* Right: Actions */}
-          <div className="desktop-nav-right" style={{ display: "flex", alignItems: "center", gap: 12 }}>
+            <div style={{ width: 1, height: 24, background: "rgba(15,23,42,0.1)" }}></div>
+
             {user ? (
-              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 16 }}>
                 <Link
                   href="/dashboard"
                   style={{
@@ -161,18 +157,18 @@ export default function Navbar() {
                     alignItems: "center",
                     gap: 10,
                     textDecoration: "none",
-                    background: "rgba(15,23,42,0.04)",
-                    padding: "7px 16px",
+                    background: "rgba(15,23,42,0.03)",
+                    padding: "6px 14px",
                     borderRadius: 100,
                     transition: "all 0.2s ease",
                   }}
-                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(15,23,42,0.08)"}
-                  onMouseLeave={(e) => e.currentTarget.style.background = "rgba(15,23,42,0.04)"}
+                  onMouseEnter={(e) => e.currentTarget.style.background = "rgba(15,23,42,0.06)"}
+                  onMouseLeave={(e) => e.currentTarget.style.background = "rgba(15,23,42,0.03)"}
                 >
-                  <div style={{ width: 26, height: 26, borderRadius: "50%", background: "linear-gradient(135deg, #3b82f6, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 11, fontWeight: 800 }}>
+                  <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 800 }}>
                     {user.name.charAt(0).toUpperCase()}
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: "#0f172a" }}>Dashboard</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "#0f172a" }}>Dashboard</span>
                 </Link>
                 <button
                   onClick={handleLogout}
@@ -186,7 +182,7 @@ export default function Navbar() {
                     fontSize: 14,
                     fontWeight: 600,
                     cursor: "pointer",
-                    padding: "7px 14px",
+                    padding: "6px 12px",
                     borderRadius: 100,
                     transition: "all 0.2s ease",
                   }}
@@ -203,30 +199,25 @@ export default function Navbar() {
                 </button>
               </div>
             ) : (
-              <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
                 <Link
                   href="/login"
                   style={{
                     textDecoration: "none",
                     fontSize: 14,
                     fontWeight: 700,
-                    color: "#334155",
-                    padding: "8px 18px",
-                    borderRadius: 10,
-                    border: "1px solid #e2e8f0",
-                    background: "#ffffff",
-                    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+                    color: "#475569",
+                    padding: "10px 16px",
+                    borderRadius: 12,
                     transition: "all 0.2s ease",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.background = "#f8fafc";
-                    e.currentTarget.style.borderColor = "#cbd5e1";
+                    e.currentTarget.style.background = "rgba(15,23,42,0.04)";
                     e.currentTarget.style.color = "#0f172a";
                   }}
                   onMouseLeave={(e) => {
-                    e.currentTarget.style.background = "#ffffff";
-                    e.currentTarget.style.borderColor = "#e2e8f0";
-                    e.currentTarget.style.color = "#334155";
+                    e.currentTarget.style.background = "transparent";
+                    e.currentTarget.style.color = "#475569";
                   }}
                 >
                   Sign In
@@ -241,22 +232,22 @@ export default function Navbar() {
                     fontSize: 14,
                     fontWeight: 700,
                     color: "white",
-                    background: "linear-gradient(135deg, #2563eb, #1d4ed8)",
-                    padding: "8px 18px",
-                    borderRadius: 10,
-                    boxShadow: "0 2px 10px rgba(37,99,235,0.25)",
-                    transition: "all 0.2s ease",
+                    background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                    padding: "10px 20px",
+                    borderRadius: 12,
+                    boxShadow: "0 4px 14px rgba(37,99,235,0.25)",
+                    transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
                   }}
                   onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = "translateY(-1px)";
-                    e.currentTarget.style.boxShadow = "0 4px 16px rgba(37,99,235,0.35)";
+                    e.currentTarget.style.transform = "translateY(-2px)";
+                    e.currentTarget.style.boxShadow = "0 6px 20px rgba(37,99,235,0.35)";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 2px 10px rgba(37,99,235,0.25)";
+                    e.currentTarget.style.boxShadow = "0 4px 14px rgba(37,99,235,0.25)";
                   }}
                 >
-                  Get Started <ChevronRight size={15} />
+                  Get Started <ChevronRight size={16} />
                 </Link>
               </div>
             )}
@@ -412,9 +403,8 @@ export default function Navbar() {
       )}
 
       <style jsx>{`
-        @media (max-width: 820px) {
-          .desktop-nav-center,
-          .desktop-nav-right {
+        @media (max-width: 768px) {
+          .desktop-nav {
             display: none !important;
           }
           .mobile-toggle {
