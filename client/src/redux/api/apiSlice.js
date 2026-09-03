@@ -243,6 +243,18 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['Settings'],
     }),
+    getAnnouncement: builder.query({
+      query: () => '/admin/settings/announcement',
+      providesTags: ['Settings'],
+    }),
+    updateAnnouncement: builder.mutation({
+      query: (data) => ({
+        url: '/admin/settings/announcement',
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Settings', 'Stats'],
+    }),
   }),
 });
 
@@ -279,4 +291,6 @@ export const {
   useDeleteAdminPlanMutation,
   useGetGstSettingQuery,
   useUpdateGstSettingMutation,
+  useGetAnnouncementQuery,
+  useUpdateAnnouncementMutation,
 } = apiSlice;

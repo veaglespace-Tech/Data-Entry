@@ -32,10 +32,114 @@ router.get(
       where: entryFilter,
     });
 
-    // Admin-only: Get total users
+    // Admin-only advanced metrics
+    let totalRevenue = 0;
+    let monthlyRevenue = 0;
     let totalUsers = 0;
+    let activeUsersCount = 0;
+    let expiredUsersCount = 0;
+    let recentTransactions = [];
+    let planDistribution = [];
+    let expiringSoonUsers = [];
+    let topForms = [];
+
     if (isAdmin) {
       totalUsers = await prisma.user.count();
+      activeUsersCount = await prisma.user.count({ where: { planStatus: "ACTIVE" } });
+      expiredUsersCount = await prisma.user.count({ where: { planStatus: "EXPIRED" } });
+
+      // Revenue aggregates
+      const revAgg = await prisma.transaction.aggregate({
+        where: { status: "SUCCESS" },
+        _sum: { amount: true },
+      });
+      totalRevenue = revAgg._sum.amount || 0;
+
+      const startOfMonth = new Date();
+      startOfMonth.setDate(1);
+      startOfMonth.setHours(0, 0, 0, 0);
+
+      const mRevAgg = await prisma.transaction.aggregate({
+        where: {
+          status: "SUCCESS",
+          createdAt: { gte: startOfMonth },
+        },
+        _sum: { amount: true },
+      });
+      monthlyRevenue = mRevAgg._sum.amount || 0;
+
+      // Recent 5 transactions
+      recentTransactions = await prisma.transaction.findMany({
+        take: 5,
+        orderBy: { createdAt: "desc" },
+        include: {
+          user: { select: { id: true, name: true, email: true } },
+          plan: { select: { name: true, price: true } },
+        },
+      });
+
+      // Plan distribution
+      const plansList = await prisma.plan.findMany({ select: { id: true, name: true } });
+      const userPlanCounts = await prisma.user.groupBy({
+        by: ["planId"],
+        _count: { id: true },
+      });
+
+      planDistribution = plansList.map((p) => {
+        const found = userPlanCounts.find((u) => u.planId === p.id);
+        return {
+          name: p.name,
+          count: found ? found._count.id : 0,
+        };
+      });
+      // Add Free / No plan if any
+      const noPlanUsers = userPlanCounts.find((u) => u.planId === null);
+      if (noPlanUsers && noPlanUsers._count.id > 0) {
+        planDistribution.push({
+          name: "Free / No Plan",
+          count: noPlanUsers._count.id,
+        });
+      }
+
+      // Expiring soon in <= 7 days
+      const now = new Date();
+      const sevenDaysLater = new Date();
+      sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+
+      expiringSoonUsers = await prisma.user.findMany({
+        where: {
+          planStatus: "ACTIVE",
+          planExpiresAt: {
+            gte: now,
+            lte: sevenDaysLater,
+          },
+        },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          planExpiresAt: true,
+          plan: { select: { name: true } },
+        },
+        orderBy: { planExpiresAt: "asc" },
+      });
+
+      // Top forms by entry count
+      topForms = await prisma.form.findMany({
+        select: {
+          id: true,
+          title: true,
+          createdAt: true,
+          user: { select: { name: true, email: true } },
+          _count: { select: { entries: true } },
+        },
+        orderBy: {
+          entries: {
+            _count: "desc",
+          },
+        },
+        take: 5,
+      });
     }
 
     // Get recent entries (last 5)
@@ -103,6 +207,19 @@ router.get(
       entries: count,
     }));
 
+    // Get announcement setting
+    let announcement = null;
+    try {
+      const annSetting = await prisma.setting.findUnique({
+        where: { key: "SYSTEM_ANNOUNCEMENT" },
+      });
+      if (annSetting && annSetting.value) {
+        announcement = JSON.parse(annSetting.value);
+      }
+    } catch (e) {
+      announcement = null;
+    }
+
     res.json({
       success: true,
       data: {
@@ -119,6 +236,22 @@ router.get(
           owner: f.user?.name || "Unknown",
         })),
         dailyActivity,
+        // Admin specific
+        totalRevenue,
+        monthlyRevenue,
+        activeUsersCount,
+        expiredUsersCount,
+        recentTransactions,
+        planDistribution,
+        expiringSoonUsers,
+        topForms: topForms.map((tf) => ({
+          id: tf.id,
+          title: tf.title,
+          entriesCount: tf._count.entries,
+          owner: tf.user?.name || "Unknown",
+          createdAt: tf.createdAt,
+        })),
+        announcement,
       },
     });
   })

@@ -529,4 +529,50 @@ router.get(
   })
 );
 
+// @route   GET /api/admin/settings/announcement
+// @desc    Get global announcement banner
+// @access  Admin
+router.get(
+  "/settings/announcement",
+  asyncHandler(async (req, res) => {
+    const annSetting = await prisma.setting.findUnique({
+      where: { key: "SYSTEM_ANNOUNCEMENT" },
+    });
+    
+    let announcement = { message: "", isActive: false };
+    if (annSetting && annSetting.value) {
+      try {
+        announcement = JSON.parse(annSetting.value);
+      } catch (e) {
+        announcement = { message: annSetting.value, isActive: true };
+      }
+    }
+    res.json({ success: true, data: announcement });
+  })
+);
+
+// @route   PUT /api/admin/settings/announcement
+// @desc    Update global announcement banner
+// @access  Admin
+router.put(
+  "/settings/announcement",
+  asyncHandler(async (req, res) => {
+    const { message = "", isActive = false } = req.body;
+
+    const payload = JSON.stringify({ message, isActive: Boolean(isActive) });
+
+    const updatedSetting = await prisma.setting.upsert({
+      where: { key: "SYSTEM_ANNOUNCEMENT" },
+      update: { value: payload },
+      create: { key: "SYSTEM_ANNOUNCEMENT", value: payload },
+    });
+
+    res.json({
+      success: true,
+      data: JSON.parse(updatedSetting.value),
+      message: "Announcement updated successfully",
+    });
+  })
+);
+
 module.exports = router;
