@@ -149,6 +149,10 @@ router.post(
             planId: transaction.planId,
             planStatus: "ACTIVE",
             planExpiresAt: plan ? calculateExpiryDate(plan) : null,
+            address: temp.address,
+            country: temp.country,
+            state: temp.state,
+            gender: temp.gender,
           },
         });
 
@@ -245,6 +249,10 @@ router.post(
           planId: plan.id,
           planStatus: "ACTIVE",
           planExpiresAt: calculateExpiryDate(plan),
+          address: temp.address,
+          country: temp.country,
+          state: temp.state,
+          gender: temp.gender,
         },
       });
       userId = newUser.id;

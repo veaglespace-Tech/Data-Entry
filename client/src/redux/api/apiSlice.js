@@ -55,6 +55,10 @@ export const apiSlice = createApi({
         body: userData,
       }),
     }),
+    getMe: builder.query({
+      query: () => '/auth/me',
+      providesTags: ['User'],
+    }),
 
     // -- DASHBOARD ENDPOINTS --
     getDashboardStats: builder.query({
@@ -246,6 +250,7 @@ export const {
   useLoginMutation,
   useRegisterMutation,
   useUpdateProfileMutation,
+  useGetMeQuery,
   useGetDashboardStatsQuery,
   useGetFormsQuery,
   useGetFormQuery,

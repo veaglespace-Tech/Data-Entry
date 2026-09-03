@@ -45,6 +45,10 @@ const registerSchema = z.object({
     .regex(/^\+?[0-9]{7,15}$/, "Invalid mobile number")
     .optional()
     .or(z.literal("")),
+  address: z.string().optional(),
+  country: z.string().optional(),
+  state: z.string().optional(),
+  gender: z.string().optional(),
 });
 
 const loginSchema = z.object({
@@ -91,6 +95,10 @@ const updateProfileSchema = z.object({
     .min(6, "Password must be at least 6 characters")
     .max(100)
     .optional(),
+  address: z.string().optional(),
+  country: z.string().optional(),
+  state: z.string().optional(),
+  gender: z.string().optional(),
 });
 
 module.exports = {

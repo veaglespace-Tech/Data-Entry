@@ -6,8 +6,12 @@ import { useGetPlansQuery } from "@/redux/api/apiSlice";
 import { useSelector } from "react-redux";
 import { selectCurrentUser } from "@/redux/slice/authSlice";
 
+import { useSearchParams } from "next/navigation";
+
 export default function SubscriptionPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isUpgrade = searchParams.get("upgrade") === "true";
   const user = useSelector(selectCurrentUser);
   const { data, isLoading, isError } = useGetPlansQuery();
   const plans = data?.data || [];
@@ -29,7 +33,11 @@ export default function SubscriptionPage() {
   }
 
   const handleSelectPlan = (planId) => {
-    router.push(`/checkout/${planId}`);
+    let url = `/checkout/${planId}`;
+    if (isUpgrade) {
+      url += "?upgrade=true";
+    }
+    router.push(url);
   };
 
   return (
@@ -56,7 +64,9 @@ export default function SubscriptionPage() {
             </div>
             <div>
               <h3 style={{ fontSize: 18, fontWeight: 700, color: '#7f1d1d', marginBottom: 4 }}>Your plan has expired</h3>
-              <p style={{ fontSize: 15, color: '#991b1b', margin: 0 }}>Please renew your subscription to regain access to your dashboard and forms.</p>
+              <p style={{ fontSize: 15, color: '#991b1b', margin: 0 }}>
+                Your subscription ended on <strong>{user?.planExpiresAt ? new Date(user.planExpiresAt).toLocaleDateString('en-IN', { year: 'numeric', month: 'long', day: 'numeric' }) : "recently"}</strong>. Please renew to regain access to your dashboard and forms.
+              </p>
             </div>
           </div>
         )}

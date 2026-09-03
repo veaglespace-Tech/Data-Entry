@@ -6,7 +6,7 @@ import { selectCurrentUser, setCredentials } from "@/redux/slice/authSlice";
 import { useUpdateProfileMutation } from "@/redux/api/apiSlice";
 import Sidebar from "@/components/Sidebar";
 import toast from "react-hot-toast";
-import { User, Mail, Phone, Lock, Save, Settings as SettingsIcon } from "lucide-react";
+import { User, Mail, Phone, Lock, Save, Settings as SettingsIcon, MapPin, Globe, Map, Users } from "lucide-react";
 
 export default function SettingsPage() {
   const user = useSelector(selectCurrentUser);
@@ -15,6 +15,10 @@ export default function SettingsPage() {
 
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
+  const [address, setAddress] = useState("");
+  const [country, setCountry] = useState("");
+  const [state, setState] = useState("");
+  const [gender, setGender] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
 
@@ -22,6 +26,10 @@ export default function SettingsPage() {
     if (user) {
       setName(user.name || "");
       setMobile(user.mobile || "");
+      setAddress(user.address || "");
+      setCountry(user.country || "");
+      setState(user.state || "");
+      setGender(user.gender || "");
     }
   }, [user]);
 
@@ -44,7 +52,7 @@ export default function SettingsPage() {
     }
 
     try {
-      const updateData = { name, mobile };
+      const updateData = { name, mobile, address, country, state, gender };
       if (password) {
         updateData.password = password;
       }
@@ -143,6 +151,67 @@ export default function SettingsPage() {
                       value={mobile}
                       onChange={(e) => setMobile(e.target.value)}
                     />
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Address</label>
+                  <div className="input-with-icon">
+                    <MapPin size={18} />
+                    <input
+                      type="text"
+                      className="form-control"
+                      placeholder="123 Main St"
+                      value={address}
+                      onChange={(e) => setAddress(e.target.value)}
+                    />
+                  </div>
+                </div>
+
+                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 24 }}>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">Country</label>
+                    <div className="input-with-icon">
+                      <Globe size={18} />
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="Country"
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                  <div className="form-group" style={{ marginBottom: 0 }}>
+                    <label className="form-label">State</label>
+                    <div className="input-with-icon">
+                      <Map size={18} />
+                      <input
+                        type="text"
+                        className="form-control"
+                        placeholder="State"
+                        value={state}
+                        onChange={(e) => setState(e.target.value)}
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="form-group" style={{ marginBottom: 0 }}>
+                  <label className="form-label">Gender</label>
+                  <div className="input-with-icon">
+                    <Users size={18} />
+                    <select
+                      className="form-control"
+                      value={gender}
+                      onChange={(e) => setGender(e.target.value)}
+                      style={{ appearance: 'none' }}
+                    >
+                      <option value="" disabled>Select Gender</option>
+                      <option value="Male">Male</option>
+                      <option value="Female">Female</option>
+                      <option value="Other">Other</option>
+                    </select>
                   </div>
                 </div>
               </div>

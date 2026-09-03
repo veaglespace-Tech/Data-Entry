@@ -20,6 +20,10 @@ model User {
   planId       Int?
   planStatus   String   @default("INACTIVE") @db.VarChar(20) // "INACTIVE", "ACTIVE", or "EXPIRED"
   planExpiresAt DateTime?
+  address    String?  @db.Text
+  country    String?  @db.VarChar(100)
+  state      String?  @db.VarChar(100)
+  gender     String?  @db.VarChar(20)
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 

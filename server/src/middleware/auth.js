@@ -33,6 +33,11 @@ const protect = async (req, res, next) => {
           planStatus: true,
           planExpiresAt: true,
           createdAt: true,
+          mobile: true,
+          address: true,
+          country: true,
+          state: true,
+          gender: true,
         },
       });
 

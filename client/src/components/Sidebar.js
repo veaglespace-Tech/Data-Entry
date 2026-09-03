@@ -40,6 +40,7 @@ export default function Sidebar() {
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
     { label: "My Forms", href: "/forms", icon: FileText },
     { label: "New Form", href: "/forms/new", icon: Plus },
+    { label: "My Subscription", href: "/dashboard/subscription", icon: CreditCard },
   ];
 
   const adminItems = [

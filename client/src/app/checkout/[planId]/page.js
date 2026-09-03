@@ -3,8 +3,8 @@
 import { use, useState, useEffect } from "react";
 import { useSelector } from "react-redux";
 import { selectCurrentUser, selectAuthLoading } from "@/redux/slice/authSlice";
-import { useInitiatePaymentMutation, useGetPlanQuery, useActivateFreePlanMutation, useGetGstSettingQuery } from "@/redux/api/apiSlice";
-import { useRouter } from "next/navigation";
+import { useInitiatePaymentMutation, useGetPlanQuery, useActivateFreePlanMutation, useGetGstSettingQuery, useGetPlansQuery } from "@/redux/api/apiSlice";
+import { useRouter, useSearchParams } from "next/navigation";
 import toast from "react-hot-toast";
 import Navbar from "@/components/Navbar";
 import { Shield, ArrowRight, Zap, CheckCircle2 } from "lucide-react";
@@ -23,6 +23,11 @@ export default function CheckoutPage({ params }) {
 
   const { data: gstData, isLoading: isGstLoading } = useGetGstSettingQuery();
   const gstPercentage = gstData?.data?.gst ?? 18;
+
+  const { data: plansData } = useGetPlansQuery();
+  const allPlans = plansData?.data || [];
+  const searchParams = useSearchParams();
+  const isUpgrade = searchParams.get("upgrade") === "true";
 
   // Retrieve temp registration data if user is not logged in yet
   const [tempUserData, setTempUserData] = useState(null);
@@ -55,10 +60,30 @@ export default function CheckoutPage({ params }) {
     return <div style={{ padding: 40, textAlign: 'center' }}>Invalid Plan Selected</div>;
   }
 
+  // Calculate Prorated Discount
+  let proratedDiscount = 0;
+  if (isUpgrade && user?.planId && user?.planExpiresAt) {
+    const currentPlan = allPlans.find(p => p.id === user.planId);
+    if (currentPlan && currentPlan.price > 0) {
+      const expiryDate = new Date(user.planExpiresAt);
+      const now = new Date();
+      if (expiryDate > now) {
+        const diffTime = Math.abs(expiryDate - now);
+        const remainingDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+        
+        let durationDays = 30; 
+        if (currentPlan.period === "per year") durationDays = 365;
+        
+        proratedDiscount = (currentPlan.price / durationDays) * remainingDays;
+      }
+    }
+  }
+
   // GST Calculation
   const gstRate = gstPercentage / 100;
-  const gstAmount = plan.price * gstRate;
-  const finalPrice = plan.price + gstAmount;
+  const basePriceAfterDiscount = Math.max(0, plan.price - proratedDiscount);
+  const gstAmount = basePriceAfterDiscount * gstRate;
+  const finalPrice = basePriceAfterDiscount + gstAmount;
 
   const handlePayment = async () => {
     if (plan.price === 0) {
@@ -147,14 +172,20 @@ export default function CheckoutPage({ params }) {
               <span>Base Price</span>
               <span style={{ fontWeight: 500, color: '#0f172a' }}>₹{plan.price.toLocaleString()}</span>
             </div>
+            {proratedDiscount > 0 && (
+              <div style={{ display: 'flex', justifyContent: 'space-between', color: '#16a34a', fontSize: 16 }}>
+                <span>Remaining Plan Value (Discount)</span>
+                <span style={{ fontWeight: 500 }}>- ₹{proratedDiscount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
+              </div>
+            )}
             <div style={{ display: 'flex', justifyContent: 'space-between', color: '#475569', fontSize: 16 }}>
               <span>GST ({gstPercentage}%)</span>
-              <span style={{ fontWeight: 500, color: '#0f172a' }}>₹{gstAmount.toLocaleString()}</span>
+              <span style={{ fontWeight: 500, color: '#0f172a' }}>₹{gstAmount.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
             </div>
             <div style={{ borderTop: '1px dashed #cbd5e1', margin: '8px 0' }}></div>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
               <span style={{ fontSize: 18, fontWeight: 600, color: '#0f172a' }}>Total Amount</span>
-              <span style={{ fontSize: 32, fontWeight: 800, color: '#2563eb', letterSpacing: '-0.02em' }}>₹{finalPrice.toLocaleString()}</span>
+              <span style={{ fontSize: 32, fontWeight: 800, color: '#2563eb', letterSpacing: '-0.02em' }}>₹{finalPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })}</span>
             </div>
           </div>
 
@@ -171,7 +202,7 @@ export default function CheckoutPage({ params }) {
             className="btn-primary"
             style={{ width: '100%', padding: '16px', fontSize: 18 }}
           >
-            {isProcessing || isActivatingFree ? "Processing..." : plan.price === 0 ? "Activate Free Plan" : `Pay ₹${finalPrice.toLocaleString()} Securely`}
+            {isProcessing || isActivatingFree ? "Processing..." : plan.price === 0 ? "Activate Free Plan" : `Pay ₹${finalPrice.toLocaleString(undefined, { maximumFractionDigits: 2 })} Securely`}
             {!(isProcessing || isActivatingFree) && <ArrowRight size={20} />}
           </button>
         </div>

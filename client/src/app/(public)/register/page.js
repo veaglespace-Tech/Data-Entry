@@ -7,7 +7,7 @@ import { useDispatch } from "react-redux";
 import { useRegisterMutation } from "@/redux/api/apiSlice";
 import { setCredentials } from "@/redux/slice/authSlice";
 import toast from "react-hot-toast";
-import { User, Mail, Lock, UserPlus, Database, Phone } from "lucide-react";
+import { User, Mail, Lock, UserPlus, Database, Phone, MapPin, Globe, Map, Users } from "lucide-react";
 
 export default function RegisterPage() {
   const [name, setName] = useState("");
@@ -15,6 +15,10 @@ export default function RegisterPage() {
   const [mobile, setMobile] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
+  const [address, setAddress] = useState("");
+  const [country, setCountry] = useState("");
+  const [state, setState] = useState("");
+  const [gender, setGender] = useState("");
   const router = useRouter();
   const dispatch = useDispatch();
   const [register, { isLoading: loading }] = useRegisterMutation();
@@ -37,7 +41,7 @@ export default function RegisterPage() {
     
     try {
       // Save temp registration data to sessionStorage
-      const tempUserData = { name, email, password, mobile };
+      const tempUserData = { name, email, password, mobile, address, country, state, gender };
       sessionStorage.setItem('tempUserData', JSON.stringify(tempUserData));
       
       toast.success("Details saved! Please choose a plan.");
@@ -122,6 +126,73 @@ export default function RegisterPage() {
                 required
                 style={{ paddingLeft: 44, height: 52 }}
               />
+            </div>
+          </div>
+
+          <div>
+            <label className="form-label">Address</label>
+            <div style={{ position: 'relative' }}>
+              <MapPin size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <input
+                type="text"
+                className="form-input"
+                placeholder="123 Main St"
+                value={address}
+                onChange={(e) => setAddress(e.target.value)}
+                required
+                style={{ paddingLeft: 44, height: 52 }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="form-label">Country</label>
+            <div style={{ position: 'relative' }}>
+              <Globe size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <input
+                type="text"
+                className="form-input"
+                placeholder="Country"
+                value={country}
+                onChange={(e) => setCountry(e.target.value)}
+                required
+                style={{ paddingLeft: 44, height: 52 }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="form-label">State</label>
+            <div style={{ position: 'relative' }}>
+              <Map size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <input
+                type="text"
+                className="form-input"
+                placeholder="State"
+                value={state}
+                onChange={(e) => setState(e.target.value)}
+                required
+                style={{ paddingLeft: 44, height: 52 }}
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="form-label">Gender</label>
+            <div style={{ position: 'relative' }}>
+              <Users size={18} style={{ position: 'absolute', left: 16, top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+              <select
+                className="form-input"
+                value={gender}
+                onChange={(e) => setGender(e.target.value)}
+                required
+                style={{ paddingLeft: 44, height: 52, appearance: 'none' }}
+              >
+                <option value="" disabled>Select Gender</option>
+                <option value="Male">Male</option>
+                <option value="Female">Female</option>
+                <option value="Other">Other</option>
+              </select>
             </div>
           </div>
 
