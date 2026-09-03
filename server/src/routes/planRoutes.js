@@ -28,13 +28,24 @@ router.get(
 router.get(
   "/",
   asyncHandler(async (req, res) => {
-    const plans = await prisma.plan.findMany({
+    let plans = await prisma.plan.findMany({
       where: { isActive: true },
       orderBy: [
         { displayOrder: 'asc' },
         { price: 'asc' }
       ]
     });
+
+    // Fallback: If no active plans found, return all plans so pricing page never breaks
+    if (!plans || plans.length === 0) {
+      plans = await prisma.plan.findMany({
+        orderBy: [
+          { displayOrder: 'asc' },
+          { price: 'asc' }
+        ]
+      });
+    }
+
     res.json({
       success: true,
       data: plans,
