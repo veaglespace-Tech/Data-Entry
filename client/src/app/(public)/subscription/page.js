@@ -7,8 +7,9 @@ import { useSelector } from "react-redux";
 import { selectCurrentUser } from "@/redux/slice/authSlice";
 
 import { useSearchParams } from "next/navigation";
+import { Suspense } from "react";
 
-export default function SubscriptionPage() {
+function SubscriptionContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const isUpgrade = searchParams.get("upgrade") === "true";
@@ -291,5 +292,13 @@ export default function SubscriptionPage() {
         </p>
       </footer>
     </>
+  );
+}
+
+export default function SubscriptionPage() {
+  return (
+    <Suspense fallback={<div style={{ minHeight: "100vh", display: 'flex', alignItems: 'center', justifyContent: 'center' }}>Loading plans...</div>}>
+      <SubscriptionContent />
+    </Suspense>
   );
 }
