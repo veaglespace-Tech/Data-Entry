@@ -29,6 +29,7 @@ import {
   Megaphone,
   IndianRupee,
   X,
+  Trash2,
 } from "lucide-react";
 import {
   XAxis,
@@ -174,16 +175,37 @@ export default function DashboardPage() {
 
   const handleSaveAnnouncement = async (e) => {
     e.preventDefault();
+    if (!annMessage.trim()) {
+      toast.error("Please write an announcement message");
+      return;
+    }
     try {
       await updateAnnouncement({
         message: annMessage.trim(),
         isActive: annActive,
       }).unwrap();
-      toast.success("Broadcast announcement updated!");
+      toast.success(annActive ? "Broadcast announcement published!" : "Broadcast announcement saved (hidden)");
       setIsAnnModalOpen(false);
       refetchStats();
     } catch (err) {
       toast.error(err?.data?.message || "Failed to update announcement");
+    }
+  };
+
+  const handleDeleteAnnouncement = async () => {
+    if (!confirm("Are you sure you want to delete this broadcast notice?")) return;
+    try {
+      await updateAnnouncement({
+        message: "",
+        isActive: false,
+      }).unwrap();
+      setAnnMessage("");
+      setAnnActive(false);
+      toast.success("Broadcast announcement deleted successfully!");
+      setIsAnnModalOpen(false);
+      refetchStats();
+    } catch (err) {
+      toast.error(err?.data?.message || "Failed to delete announcement");
     }
   };
 
@@ -251,22 +273,44 @@ export default function DashboardPage() {
             </div>
 
             {isAdmin && (
-              <button
-                onClick={() => setIsAnnModalOpen(true)}
-                style={{
-                  background: "#ffffff",
-                  border: "1px solid #cbd5e1",
-                  borderRadius: 8,
-                  padding: "6px 12px",
-                  fontSize: 12,
-                  fontWeight: 600,
-                  color: "#475569",
-                  cursor: "pointer",
-                  whiteSpace: "nowrap",
-                }}
-              >
-                Edit Notice
-              </button>
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <button
+                  onClick={() => setIsAnnModalOpen(true)}
+                  style={{
+                    background: "#ffffff",
+                    border: "1px solid #cbd5e1",
+                    borderRadius: 8,
+                    padding: "6px 12px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "#2563eb",
+                    cursor: "pointer",
+                    whiteSpace: "nowrap",
+                  }}
+                >
+                  Edit Notice
+                </button>
+                <button
+                  onClick={handleDeleteAnnouncement}
+                  title="Delete Notice"
+                  style={{
+                    background: "#fee2e2",
+                    border: "1px solid #fecaca",
+                    borderRadius: 8,
+                    padding: "6px 10px",
+                    fontSize: 12,
+                    fontWeight: 600,
+                    color: "#dc2626",
+                    cursor: "pointer",
+                    display: "flex",
+                    alignItems: "center",
+                    gap: 4,
+                  }}
+                >
+                  <Trash2 size={13} />
+                  Delete
+                </button>
+              </div>
             )}
           </div>
         )}
@@ -1237,43 +1281,65 @@ export default function DashboardPage() {
                 />
               </div>
 
-              <div style={{ display: "flex", justifyContent: "flex-end", gap: 12 }}>
-                <button
-                  type="button"
-                  onClick={() => {
-                    setAnnMessage("");
-                    setAnnActive(false);
-                  }}
-                  style={{
-                    padding: "10px 18px",
-                    borderRadius: 10,
-                    border: "1px solid #cbd5e1",
-                    background: "#ffffff",
-                    color: "#64748b",
-                    fontSize: 14,
-                    fontWeight: 600,
-                    cursor: "pointer",
-                  }}
-                >
-                  Clear Notice
-                </button>
-                <button
-                  type="submit"
-                  disabled={isUpdatingAnn}
-                  style={{
-                    padding: "10px 22px",
-                    borderRadius: 10,
-                    border: "none",
-                    background: "linear-gradient(135deg, #2563eb, #3b82f6)",
-                    color: "#ffffff",
-                    fontSize: 14,
-                    fontWeight: 700,
-                    cursor: "pointer",
-                    boxShadow: "0 4px 12px rgba(37,99,235,0.25)",
-                  }}
-                >
-                  {isUpdatingAnn ? "Saving..." : "Publish Notice"}
-                </button>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                {stats?.announcement?.message ? (
+                  <button
+                    type="button"
+                    onClick={handleDeleteAnnouncement}
+                    style={{
+                      padding: "10px 14px",
+                      borderRadius: 10,
+                      border: "1px solid #fecaca",
+                      background: "#fee2e2",
+                      color: "#dc2626",
+                      fontSize: 13,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                      display: "flex",
+                      alignItems: "center",
+                      gap: 6,
+                    }}
+                  >
+                    <Trash2 size={15} />
+                    Delete Notice
+                  </button>
+                ) : <div />}
+
+                <div style={{ display: "flex", gap: 10 }}>
+                  <button
+                    type="button"
+                    onClick={() => setIsAnnModalOpen(false)}
+                    style={{
+                      padding: "10px 18px",
+                      borderRadius: 10,
+                      border: "1px solid #cbd5e1",
+                      background: "#ffffff",
+                      color: "#64748b",
+                      fontSize: 14,
+                      fontWeight: 600,
+                      cursor: "pointer",
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={isUpdatingAnn}
+                    style={{
+                      padding: "10px 22px",
+                      borderRadius: 10,
+                      border: "none",
+                      background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                      color: "#ffffff",
+                      fontSize: 14,
+                      fontWeight: 700,
+                      cursor: "pointer",
+                      boxShadow: "0 4px 12px rgba(37,99,235,0.25)",
+                    }}
+                  >
+                    {isUpdatingAnn ? "Saving..." : "Save & Publish"}
+                  </button>
+                </div>
               </div>
             </form>
           </div>
