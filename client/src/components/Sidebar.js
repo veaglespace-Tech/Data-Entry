@@ -109,8 +109,8 @@ export default function Sidebar() {
           }
         `}</style>
         {/* Brand Logo */}
-        <div style={{ padding: "0 16px", marginBottom: 24, display: "flex", alignItems: "center", gap: 12 }}>
-          <div style={{ width: 42, height: 42, display: "flex", alignItems: "center", justifyContent: "center" }}>
+        <div style={{ padding: "0 12px", marginBottom: 26, display: "flex", alignItems: "center", gap: 14 }}>
+          <div style={{ width: 54, height: 54, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
             <img 
               src="/veagle-logo.webp" 
               alt="Main Brand Logo" 
@@ -118,7 +118,7 @@ export default function Sidebar() {
               style={{ width: "100%", height: "100%", objectFit: "contain" }}
             />
           </div>
-          <span style={{ fontSize: 22, fontWeight: 800, color: "#f8fafc", letterSpacing: "-0.02em" }}>
+          <span style={{ fontSize: 24, fontWeight: 800, color: "#f8fafc", letterSpacing: "-0.02em" }}>
             DataVault
           </span>
         </div>

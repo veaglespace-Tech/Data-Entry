@@ -43,15 +43,23 @@ export default function AdminLoginPage() {
 
         <div className="glass-card animate-fade-in-up" style={{ width: '100%', maxWidth: 460, padding: 48, position: 'relative', zIndex: 10, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)' }}>
           {/* Logo / Header */}
-          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 16, marginBottom: 40 }}>
-            <div style={{ width: 64, height: 64, borderRadius: '50%', background: 'linear-gradient(135deg, #10b981, #059669)', display: 'flex', alignItems: 'center', justifyContent: 'center', boxShadow: '0 8px 32px rgba(16, 185, 129, 0.4)' }}>
-              <ShieldCheck size={32} color="white" />
+          <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 14, marginBottom: 32 }}>
+            <div style={{ width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+              <img 
+                src="/veagle-logo.webp" 
+                alt="Main Brand Logo" 
+                className="animate-flip-y"
+                style={{ width: "100%", height: "100%", objectFit: "contain" }}
+              />
             </div>
             <div style={{ textAlign: 'center' }}>
-              <h1 style={{ fontSize: 24, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', margin: 0 }}>
-                Admin Portal
+              <div style={{ display: 'inline-flex', alignItems: 'center', gap: 6, background: '#ecfdf5', color: '#059669', padding: '4px 12px', borderRadius: 20, fontSize: 12, fontWeight: 700, marginBottom: 8 }}>
+                <ShieldCheck size={14} /> Official Admin Access
+              </div>
+              <h1 style={{ fontSize: 26, fontWeight: 800, color: '#0f172a', letterSpacing: '-0.02em', margin: 0 }}>
+                DataVault Admin Portal
               </h1>
-              <p style={{ color: '#64748b', fontSize: 14, margin: '8px 0 0 0' }}>Secure access for administrators</p>
+              <p style={{ color: '#64748b', fontSize: 14, margin: '6px 0 0 0' }}>Secure control center for administrators</p>
             </div>
           </div>
 

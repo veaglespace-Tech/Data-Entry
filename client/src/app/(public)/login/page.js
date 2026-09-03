@@ -37,8 +37,8 @@ export default function LoginPage() {
 
         <div className="glass-card animate-fade-in-up" style={{ width: '100%', maxWidth: 460, padding: 48, position: 'relative', zIndex: 10, background: 'rgba(255,255,255,0.95)', backdropFilter: 'blur(20px)' }}>
         {/* Logo */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 12, marginBottom: 32 }}>
-          <div style={{ width: 48, height: 48, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 14, marginBottom: 28 }}>
+          <div style={{ width: 64, height: 64, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
             <img 
               src="/veagle-logo.webp" 
               alt="Main Brand Logo" 
@@ -46,7 +46,7 @@ export default function LoginPage() {
               style={{ width: "100%", height: "100%", objectFit: "contain" }}
             />
           </div>
-          <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: '-0.02em', color: '#0f172a' }}>
+          <span style={{ fontSize: 30, fontWeight: 800, letterSpacing: '-0.02em', color: '#0f172a' }}>
             DataVault
           </span>
         </div>

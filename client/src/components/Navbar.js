@@ -74,11 +74,12 @@ export default function Navbar() {
           >
             <div
               style={{
-                width: 38,
-                height: 38,
+                width: 50,
+                height: 50,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
+                flexShrink: 0,
               }}
             >
               <img 
@@ -90,7 +91,7 @@ export default function Navbar() {
             </div>
             <span
               style={{
-                fontSize: 20,
+                fontSize: 22,
                 fontWeight: 800,
                 letterSpacing: "-0.03em",
                 color: "#0f172a",

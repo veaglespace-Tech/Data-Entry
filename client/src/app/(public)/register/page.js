@@ -73,8 +73,8 @@ export default function RegisterPage() {
           }}
         >
           {/* Logo & Title */}
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 10, marginBottom: 20 }}>
-            <div style={{ width: 40, height: 40, display: "flex", alignItems: "center", justifyContent: "center" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "center", gap: 14, marginBottom: 20 }}>
+            <div style={{ width: 60, height: 60, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
               <img 
                 src="/veagle-logo.webp" 
                 alt="Main Brand Logo" 
@@ -82,7 +82,7 @@ export default function RegisterPage() {
                 style={{ width: "100%", height: "100%", objectFit: "contain" }}
               />
             </div>
-            <span style={{ fontSize: 24, fontWeight: 800, letterSpacing: "-0.02em", color: "#0f172a" }}>
+            <span style={{ fontSize: 28, fontWeight: 800, letterSpacing: "-0.02em", color: "#0f172a" }}>
               DataVault
             </span>
           </div>
