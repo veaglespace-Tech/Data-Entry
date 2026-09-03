@@ -125,7 +125,7 @@ router.get(
           orderBy: { createdAt: "desc" },
         },
         _count: {
-          select: { forms: true, entries: { where: { form: { userId } } } }
+          select: { forms: true }
         }
       },
     });

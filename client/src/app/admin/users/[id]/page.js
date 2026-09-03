@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, use } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter, useParams } from "next/navigation";
 import { useSelector } from "react-redux";
 import { selectCurrentUser, selectAuthLoading, selectIsAdmin } from "@/redux/slice/authSlice";
 import { useGetUserDetailsQuery, useUpdateUserDetailsMutation, useGetPlansQuery } from "@/redux/api/apiSlice";
@@ -12,7 +12,8 @@ import Link from "next/link";
 
 export default function UserDetailsPage({ params }) {
   const router = useRouter();
-  const { id } = use(params);
+  const routeParams = useParams();
+  const id = routeParams?.id || (params && typeof params.then === "function" ? use(params).id : params?.id);
   
   const user = useSelector(selectCurrentUser);
   const authLoading = useSelector(selectAuthLoading);
@@ -79,7 +80,22 @@ export default function UserDetailsPage({ params }) {
     );
   }
 
-  if (!targetUser) return null;
+  if (!targetUser) {
+    return (
+      <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
+        <Sidebar />
+        <main style={{ flex: 1, padding: "32px 36px" }}>
+          <div style={{ background: "white", padding: 32, borderRadius: 16, border: "1px solid #e2e8f0" }}>
+            <h2 style={{ fontSize: 20, fontWeight: 700, color: "#0f172a" }}>User Not Found</h2>
+            <p style={{ color: "#64748b", margin: "8px 0 20px" }}>The requested user could not be found or failed to load.</p>
+            <Link href="/admin/users" style={{ color: "#2563eb", fontWeight: 600, textDecoration: "none" }}>
+              ← Back to Users List
+            </Link>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
