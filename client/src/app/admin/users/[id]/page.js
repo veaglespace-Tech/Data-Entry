@@ -4,7 +4,7 @@ import { useEffect, useState, use } from "react";
 import { useRouter, useParams } from "next/navigation";
 import { useSelector } from "react-redux";
 import { selectCurrentUser, selectAuthLoading, selectIsAdmin } from "@/redux/slice/authSlice";
-import { useGetUserDetailsQuery, useUpdateUserDetailsMutation, useGetPlansQuery } from "@/redux/api/apiSlice";
+import { useGetUserDetailsQuery, useUpdateUserDetailsMutation, useGetAdminPlansQuery } from "@/redux/api/apiSlice";
 import Sidebar from "@/components/Sidebar";
 import toast from "react-hot-toast";
 import { ArrowLeft, User, Mail, Phone, Calendar, Star, FileText, CheckCircle2, XCircle, Clock, Shield, Edit2, X, Users } from "lucide-react";
@@ -20,7 +20,7 @@ export default function UserDetailsPage({ params }) {
   const isAdmin = useSelector(selectIsAdmin);
 
   const { data: userDetails, isLoading: userLoading, refetch } = useGetUserDetailsQuery(id, { skip: !isAdmin || !id });
-  const { data: plansData } = useGetPlansQuery();
+  const { data: plansData } = useGetAdminPlansQuery();
   const [updateUserDetails] = useUpdateUserDetailsMutation();
 
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
