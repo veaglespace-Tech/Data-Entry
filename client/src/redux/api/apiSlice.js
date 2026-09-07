@@ -4,36 +4,33 @@ import { logout } from '@/redux/slice/authSlice';
 const baseQuery = fetchBaseQuery({
   baseUrl: process.env.NEXT_PUBLIC_API_URL || 'http://localhost:5000/api',
   prepareHeaders: (headers, { getState }) => {
-    // Get token from Redux state
     const token = getState().auth.token;
-
     if (token) {
       headers.set('Authorization', `Bearer ${token}`);
     }
-    
     return headers;
   },
 });
 
 const baseQueryWithReauth = async (args, api, extraOptions) => {
   let result = await baseQuery(args, api, extraOptions);
-
-  // If 401 Unauthorized, automatically log out
   if (result.error && result.error.status === 401) {
     api.dispatch(logout());
   }
-
   return result;
 };
 
 export const apiSlice = createApi({
   reducerPath: 'api',
   baseQuery: baseQueryWithReauth,
-  tagTypes: ['Auth', 'Form', 'Entry', 'User', 'Stats', 'AdminForms', 'AdminTransactions', 'AdminPlans', 'Settings'],
+  tagTypes: [
+    'Auth', 'Form', 'Entry', 'User', 'Stats',
+    'AdminForms', 'AdminPlans', 'Settings',
+    'RegistrationRequests', 'FieldTemplates', 'UserTemplates', 'MyEntries',
+  ],
   endpoints: (builder) => ({
-    // Endpoints will be injected from other files, but we can define some here as well.
-    
-    // -- AUTH ENDPOINTS --
+
+    // ── AUTH ──────────────────────────────────────────
     login: builder.mutation({
       query: (credentials) => ({
         url: '/auth/login',
@@ -54,19 +51,39 @@ export const apiSlice = createApi({
         method: 'PUT',
         body: userData,
       }),
+      invalidatesTags: ['Auth'],
     }),
     getMe: builder.query({
       query: () => '/auth/me',
-      providesTags: ['User'],
+      providesTags: ['Auth'],
     }),
 
-    // -- DASHBOARD ENDPOINTS --
+    // ── DASHBOARD ─────────────────────────────────────
     getDashboardStats: builder.query({
       query: () => '/dashboard/stats',
       providesTags: ['Stats'],
     }),
 
-    // -- FORMS ENDPOINTS --
+    // User: get assigned field templates
+    getMyTemplates: builder.query({
+      query: () => '/dashboard/my-templates',
+      providesTags: ['UserTemplates'],
+    }),
+
+    // User: get submitted entries
+    getMyEntries: builder.query({
+      query: ({ page = 1, limit = 20 } = {}) =>
+        `/dashboard/my-entries?page=${page}&limit=${limit}`,
+      providesTags: ['MyEntries'],
+    }),
+
+    // User: export entries as xlsx
+    exportMyEntries: builder.query({
+      query: (formId) =>
+        `/dashboard/my-entries/export${formId ? `?formId=${formId}` : ''}`,
+    }),
+
+    // ── FORMS ─────────────────────────────────────────
     getForms: builder.query({
       query: () => '/forms',
       providesTags: ['Form'],
@@ -99,9 +116,9 @@ export const apiSlice = createApi({
       invalidatesTags: ['Form', 'Stats'],
     }),
 
-    // -- ENTRIES ENDPOINTS --
+    // ── ENTRIES ───────────────────────────────────────
     getFormEntries: builder.query({
-      query: ({ formId, page = 1, search = '' }) => 
+      query: ({ formId, page = 1, search = '' }) =>
         `/forms/${formId}/entries?page=${page}&limit=10${search ? `&search=${search}` : ''}`,
       providesTags: (result, error, { formId }) => [{ type: 'Entry', formId }],
     }),
@@ -111,7 +128,9 @@ export const apiSlice = createApi({
         method: 'POST',
         body: { data },
       }),
-      invalidatesTags: (result, error, { formId }) => [{ type: 'Entry', formId }, 'Stats'],
+      invalidatesTags: (result, error, { formId }) => [
+        { type: 'Entry', formId }, 'Stats', 'MyEntries',
+      ],
     }),
     updateEntry: builder.mutation({
       query: ({ formId, entryId, data }) => ({
@@ -119,17 +138,136 @@ export const apiSlice = createApi({
         method: 'PUT',
         body: { data },
       }),
-      invalidatesTags: (result, error, { formId }) => [{ type: 'Entry', formId }],
+      invalidatesTags: (result, error, { formId }) => [
+        { type: 'Entry', formId }, 'MyEntries',
+      ],
     }),
     deleteEntry: builder.mutation({
       query: ({ formId, entryId }) => ({
         url: `/forms/${formId}/entries/${entryId}`,
         method: 'DELETE',
       }),
-      invalidatesTags: (result, error, { formId }) => [{ type: 'Entry', formId }, 'Stats'],
+      invalidatesTags: (result, error, { formId }) => [
+        { type: 'Entry', formId }, 'Stats', 'MyEntries',
+      ],
     }),
 
-    // -- ADMIN USER ENDPOINTS --
+    // ── ADMIN: REGISTRATION REQUESTS ──────────────────
+    getRegistrationRequests: builder.query({
+      query: ({ status, search = '' } = {}) => {
+        const params = new URLSearchParams();
+        if (status) params.set('status', status);
+        if (search) params.set('search', search);
+        return `/admin/registration-requests?${params.toString()}`;
+      },
+      providesTags: ['RegistrationRequests'],
+    }),
+    approveRegistrationRequest: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `/admin/registration-requests/${id}/approve`,
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['RegistrationRequests', 'User', 'Stats'],
+    }),
+    rejectRegistrationRequest: builder.mutation({
+      query: ({ id, adminNote }) => ({
+        url: `/admin/registration-requests/${id}/reject`,
+        method: 'POST',
+        body: { adminNote },
+      }),
+      invalidatesTags: ['RegistrationRequests'],
+    }),
+    deleteRegistrationRequest: builder.mutation({
+      query: (id) => ({
+        url: `/admin/registration-requests/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['RegistrationRequests'],
+    }),
+
+    // ── ADMIN: FIELD TEMPLATES ─────────────────────────
+    getFieldTemplates: builder.query({
+      query: () => '/admin/field-templates',
+      providesTags: ['FieldTemplates'],
+    }),
+    getFieldTemplate: builder.query({
+      query: (id) => `/admin/field-templates/${id}`,
+      providesTags: (result, error, id) => [{ type: 'FieldTemplates', id }],
+    }),
+    createFieldTemplate: builder.mutation({
+      query: (data) => ({
+        url: '/admin/field-templates',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['FieldTemplates'],
+    }),
+    updateFieldTemplate: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `/admin/field-templates/${id}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['FieldTemplates'],
+    }),
+    deleteFieldTemplate: builder.mutation({
+      query: (id) => ({
+        url: `/admin/field-templates/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['FieldTemplates'],
+    }),
+    assignFieldTemplate: builder.mutation({
+      query: ({ userId, templateId }) => ({
+        url: `/admin/users/${userId}/assign-template`,
+        method: 'POST',
+        body: { templateId },
+      }),
+      invalidatesTags: ['User', 'UserTemplates'],
+    }),
+    unassignFieldTemplate: builder.mutation({
+      query: ({ userId, templateId }) => ({
+        url: `/admin/users/${userId}/unassign-template/${templateId}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['User', 'UserTemplates'],
+    }),
+    getUserTemplates: builder.query({
+      query: (userId) => `/admin/users/${userId}/templates`,
+      providesTags: (result, error, userId) => [{ type: 'UserTemplates', id: userId }],
+    }),
+
+    // ── ADMIN: PLANS ───────────────────────────────────
+    getAdminPlans: builder.query({
+      query: () => '/admin/plans',
+      providesTags: ['Plan'],
+    }),
+    createAdminPlan: builder.mutation({
+      query: (data) => ({
+        url: '/admin/plans',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['Plan'],
+    }),
+    updateAdminPlan: builder.mutation({
+      query: ({ id, ...data }) => ({
+        url: `/admin/plans/${id}`,
+        method: 'PUT',
+        body: data,
+      }),
+      invalidatesTags: ['Plan'],
+    }),
+    deleteAdminPlan: builder.mutation({
+      query: (id) => ({
+        url: `/admin/plans/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['Plan'],
+    }),
+
+    // ── ADMIN: USERS ───────────────────────────────────
     getUsers: builder.query({
       query: (search = '') => `/admin/users${search ? `?search=${search}` : ''}`,
       providesTags: ['User'],
@@ -161,32 +299,8 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['User'],
     }),
-    
-    // -- PAYMENT ENDPOINTS --
-    initiatePayment: builder.mutation({
-      query: (paymentData) => ({
-        url: '/payment/hash',
-        method: 'POST',
-        body: paymentData,
-      }),
-    }),
-    activateFreePlan: builder.mutation({
-      query: (data) => ({
-        url: '/payment/free',
-        method: 'POST',
-        body: data,
-      }),
-    }),
-    
-    // -- PLAN ENDPOINTS --
-    getPlans: builder.query({
-      query: () => '/plans',
-    }),
-    getPlan: builder.query({
-      query: (id) => `/plans/${id}`,
-    }),
 
-    // -- NEW ADMIN ENDPOINTS --
+    // ── ADMIN: FORMS ───────────────────────────────────
     getAdminForms: builder.query({
       query: (search = '') => `/admin/forms?search=${search}`,
       providesTags: ['AdminForms'],
@@ -198,10 +312,8 @@ export const apiSlice = createApi({
       }),
       invalidatesTags: ['AdminForms', 'Stats'],
     }),
-    getAdminTransactions: builder.query({
-      query: () => '/admin/transactions',
-      providesTags: ['AdminTransactions'],
-    }),
+
+    // ── ADMIN: PLANS ───────────────────────────────────
     getAdminPlans: builder.query({
       query: () => '/admin/plans',
       providesTags: ['AdminPlans'],
@@ -230,19 +342,7 @@ export const apiSlice = createApi({
       invalidatesTags: ['AdminPlans'],
     }),
 
-    // -- SETTINGS ENDPOINTS --
-    getGstSetting: builder.query({
-      query: () => '/plans/settings/gst',
-      providesTags: ['Settings'],
-    }),
-    updateGstSetting: builder.mutation({
-      query: (data) => ({
-        url: '/admin/settings/gst',
-        method: 'PUT',
-        body: data,
-      }),
-      invalidatesTags: ['Settings'],
-    }),
+    // ── ADMIN: SETTINGS ────────────────────────────────
     getAnnouncement: builder.query({
       query: () => '/admin/settings/announcement',
       providesTags: ['Settings'],
@@ -259,38 +359,56 @@ export const apiSlice = createApi({
 });
 
 export const {
+  // Auth
   useLoginMutation,
   useRegisterMutation,
   useUpdateProfileMutation,
   useGetMeQuery,
+  // Dashboard
   useGetDashboardStatsQuery,
+  useGetMyTemplatesQuery,
+  useGetMyEntriesQuery,
+  useExportMyEntriesQuery,
+  // Forms
   useGetFormsQuery,
   useGetFormQuery,
   useCreateFormMutation,
   useUpdateFormMutation,
   useDeleteFormMutation,
+  // Entries
   useGetFormEntriesQuery,
   useCreateEntryMutation,
   useUpdateEntryMutation,
   useDeleteEntryMutation,
+  // Admin: Registration Requests
+  useGetRegistrationRequestsQuery,
+  useApproveRegistrationRequestMutation,
+  useRejectRegistrationRequestMutation,
+  useDeleteRegistrationRequestMutation,
+  // Admin: Field Templates
+  useGetFieldTemplatesQuery,
+  useGetFieldTemplateQuery,
+  useCreateFieldTemplateMutation,
+  useUpdateFieldTemplateMutation,
+  useDeleteFieldTemplateMutation,
+  useAssignFieldTemplateMutation,
+  useUnassignFieldTemplateMutation,
+  useGetUserTemplatesQuery,
+  // Admin: Users
   useGetUsersQuery,
   useGetUserDetailsQuery,
   useUpdateUserRoleMutation,
   useDeleteUserMutation,
   useUpdateUserDetailsMutation,
-  useInitiatePaymentMutation,
-  useActivateFreePlanMutation,
-  useGetPlansQuery,
-  useGetPlanQuery,
+  // Admin: Forms
   useGetAdminFormsQuery,
   useDeleteAdminFormMutation,
-  useGetAdminTransactionsQuery,
+  // Admin: Plans
   useGetAdminPlansQuery,
   useCreateAdminPlanMutation,
   useUpdateAdminPlanMutation,
   useDeleteAdminPlanMutation,
-  useGetGstSettingQuery,
-  useUpdateGstSettingMutation,
+  // Admin: Settings
   useGetAnnouncementQuery,
   useUpdateAnnouncementMutation,
 } = apiSlice;

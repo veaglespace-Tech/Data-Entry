@@ -4,10 +4,20 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { useSelector } from "react-redux";
 import { selectCurrentUser, selectAuthLoading, selectIsAdmin } from "@/redux/slice/authSlice";
-import { useGetUsersQuery, useDeleteUserMutation, useUpdateUserRoleMutation, useUpdateUserDetailsMutation, useGetPlansQuery } from "@/redux/api/apiSlice";
+import { 
+  useGetUsersQuery, 
+  useDeleteUserMutation, 
+  useUpdateUserRoleMutation, 
+  useUpdateUserDetailsMutation, 
+  useGetAdminPlansQuery,
+  useGetFieldTemplatesQuery,
+  useGetUserTemplatesQuery,
+  useAssignFieldTemplateMutation,
+  useUnassignFieldTemplateMutation
+} from "@/redux/api/apiSlice";
 import Sidebar from "@/components/Sidebar";
 import toast from "react-hot-toast";
-import { Users, Search, Trash2, Shield, User, Star, Edit2, X, Check, Eye } from "lucide-react";
+import { Users, Search, Trash2, Shield, User, Star, Edit2, X, Check, Eye, Layers } from "lucide-react";
 import Link from "next/link";
 
 export default function AdminUsersPage() {
@@ -23,7 +33,7 @@ export default function AdminUsersPage() {
   const [deleteUserMutation] = useDeleteUserMutation();
   const [updateRoleMutation] = useUpdateUserRoleMutation();
   const [updateUserDetails] = useUpdateUserDetailsMutation();
-  const { data: plansData } = useGetPlansQuery();
+  const { data: plansData } = useGetAdminPlansQuery();
   const plans = plansData?.data || [];
 
   // Edit Modal State
@@ -40,6 +50,30 @@ export default function AdminUsersPage() {
 
   const users = data?.data || [];
   const loading = authLoading || isLoading;
+
+  const { data: templatesData } = useGetFieldTemplatesQuery(undefined, { skip: !isAdmin });
+  const allTemplates = templatesData?.data || [];
+
+  const { data: userTemplatesData } = useGetUserTemplatesQuery(editingUser?.id, { skip: !editingUser });
+  const userTemplates = userTemplatesData?.data || [];
+
+  const [assignTemplate] = useAssignFieldTemplateMutation();
+  const [unassignTemplate] = useUnassignFieldTemplateMutation();
+
+  const toggleTemplate = async (templateId) => {
+    const isAssigned = userTemplates.some(ut => ut.templateId === templateId);
+    try {
+      if (isAssigned) {
+        await unassignTemplate({ userId: editingUser.id, templateId }).unwrap();
+        toast.success("Template unassigned");
+      } else {
+        await assignTemplate({ userId: editingUser.id, templateId }).unwrap();
+        toast.success("Template assigned");
+      }
+    } catch (error) {
+      toast.error(error.data?.message || "Action failed");
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && (!user || !isAdmin)) {
@@ -64,6 +98,31 @@ export default function AdminUsersPage() {
       planExpiresAt: userToEdit.planExpiresAt ? new Date(userToEdit.planExpiresAt).toISOString().slice(0, 16) : ""
     });
     setIsEditModalOpen(true);
+  };
+
+  const handlePlanChange = (e) => {
+    const pId = e.target.value;
+    setEditForm(prev => {
+      const next = { ...prev, planId: pId };
+      if (!pId) {
+        next.planExpiresAt = "";
+        return next;
+      }
+      const plan = plans.find(p => p.id === parseInt(pId));
+      if (plan && plan.period) {
+        const daysMatch = plan.period.match(/(\d+)\s*days?/i);
+        if (daysMatch) {
+          const days = parseInt(daysMatch[1]);
+          const expiry = new Date();
+          expiry.setDate(expiry.getDate() + days);
+          next.planExpiresAt = expiry.toISOString().slice(0, 16);
+          next.planStatus = "ACTIVE"; // auto-set to active if assigning a plan
+        } else {
+          next.planExpiresAt = "";
+        }
+      }
+      return next;
+    });
   };
 
   const handleEditSubmit = async (e) => {
@@ -353,7 +412,7 @@ export default function AdminUsersPage() {
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24 }}>
                       <div className="form-group" style={{ marginBottom: 0 }}>
                         <label className="form-label">Assign Plan</label>
-                        <select className="form-control" value={editForm.planId} onChange={e => setEditForm({...editForm, planId: e.target.value})}>
+                        <select className="form-control" value={editForm.planId} onChange={handlePlanChange}>
                           <option value="">No Plan</option>
                           {plans.map(p => (
                             <option key={p.id} value={p.id}>{p.name} (₹{p.price})</option>
@@ -379,6 +438,33 @@ export default function AdminUsersPage() {
                         onChange={e => setEditForm({...editForm, planExpiresAt: e.target.value})} 
                       />
                       <p style={{ fontSize: 12, color: '#64748b', marginTop: 8 }}>Leave blank for lifetime access, or specify an exact end date.</p>
+                    </div>
+                  </div>
+
+                  {/* Template Assignment Section */}
+                  <div style={{ padding: 20, background: '#f8fafc', borderRadius: 16, border: '1px solid #e2e8f0', marginTop: 8 }}>
+                    <h3 style={{ fontSize: 14, fontWeight: 700, color: '#475569', marginBottom: 16, display: 'flex', alignItems: 'center', gap: 8 }}>
+                      <Layers size={16} color="#3b82f6" /> Assigned Field Templates
+                    </h3>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 12, maxHeight: 150, overflowY: "auto" }}>
+                      {allTemplates.length === 0 ? (
+                        <p style={{ fontSize: 13, color: '#64748b', margin: 0 }}>No templates available in the system.</p>
+                      ) : (
+                        allTemplates.map(t => {
+                          const isAssigned = userTemplates.some(ut => ut.templateId === t.id);
+                          return (
+                            <label key={t.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: "10px 14px", background: "white", borderRadius: 10, border: "1px solid #e2e8f0", cursor: "pointer", margin: 0 }}>
+                              <input 
+                                type="checkbox" 
+                                checked={isAssigned} 
+                                onChange={() => toggleTemplate(t.id)} 
+                                style={{ width: 16, height: 16, cursor: "pointer" }}
+                              />
+                              <span style={{ fontSize: 14, fontWeight: 600, color: "#0f172a" }}>{t.title}</span>
+                            </label>
+                          );
+                        })
+                      )}
                     </div>
                   </div>
 

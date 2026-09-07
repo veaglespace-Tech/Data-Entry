@@ -8,9 +8,7 @@ import {
   useGetAdminPlansQuery, 
   useCreateAdminPlanMutation,
   useUpdateAdminPlanMutation,
-  useDeleteAdminPlanMutation,
-  useGetGstSettingQuery,
-  useUpdateGstSettingMutation
+  useDeleteAdminPlanMutation
 } from "@/redux/api/apiSlice";
 import Sidebar from "@/components/Sidebar";
 import toast from "react-hot-toast";
@@ -27,19 +25,8 @@ export default function AdminPlansPage() {
   const [updatePlan] = useUpdateAdminPlanMutation();
   const [deletePlan] = useDeleteAdminPlanMutation();
 
-  const { data: gstData, isLoading: isGstLoading } = useGetGstSettingQuery(undefined, { skip: !isAdmin });
-  const [updateGst, { isLoading: isUpdatingGst }] = useUpdateGstSettingMutation();
-
   const plans = data?.data || [];
-  const loading = authLoading || isLoading || isGstLoading;
-
-  const [gstValue, setGstValue] = useState(18);
-
-  useEffect(() => {
-    if (gstData?.data?.gst !== undefined) {
-      setGstValue(gstData.data.gst);
-    }
-  }, [gstData]);
+  const loading = authLoading || isLoading;
 
   // Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -137,15 +124,6 @@ export default function AdminPlansPage() {
     }
   };
 
-  const handleUpdateGst = async () => {
-    try {
-      await updateGst({ gst: parseFloat(gstValue) }).unwrap();
-      toast.success("Global GST updated successfully");
-    } catch (error) {
-      toast.error(error.data?.message || "Failed to update GST");
-    }
-  };
-
   return (
     <div style={{ display: "flex", minHeight: "100vh", background: "#f8fafc" }}>
       <Sidebar />
@@ -172,37 +150,6 @@ export default function AdminPlansPage() {
             >
               <Plus size={18} /> Create New Plan
             </button>
-          </div>
-
-          {/* Global GST Settings */}
-          <div className="glass-card animate-fade-in-up" style={{ padding: 24, marginBottom: 40, animationDelay: "0.05s", display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderLeft: '4px solid #8b5cf6' }}>
-            <div>
-              <h3 style={{ fontSize: 18, fontWeight: 700, color: '#0f172a', margin: 0, marginBottom: 4 }}>Global GST Configuration</h3>
-              <p style={{ fontSize: 14, color: '#64748b', margin: 0 }}>This tax percentage is applied to all plan purchases during checkout.</p>
-            </div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <div style={{ position: 'relative', width: 120 }}>
-                <input 
-                  type="number" 
-                  className="form-control" 
-                  value={gstValue} 
-                  onChange={(e) => setGstValue(e.target.value)} 
-                  min="0"
-                  max="100"
-                  step="0.01"
-                  style={{ paddingRight: 32 }}
-                />
-                <span style={{ position: 'absolute', right: 12, top: '50%', transform: 'translateY(-50%)', color: '#64748b', fontWeight: 600 }}>%</span>
-              </div>
-              <button 
-                onClick={handleUpdateGst}
-                disabled={isUpdatingGst}
-                className="btn-primary"
-                style={{ padding: '11px 20px', background: 'linear-gradient(135deg, #8b5cf6, #7c3aed)' }}
-              >
-                {isUpdatingGst ? "Saving..." : "Update"}
-              </button>
-            </div>
           </div>
 
           {/* Table */}

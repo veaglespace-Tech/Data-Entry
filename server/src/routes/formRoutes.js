@@ -60,6 +60,19 @@ router.post(
       throw new Error("Please provide a title and at least one field");
     }
 
+    // Check form limit based on user's plan
+    const userWithPlan = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { plan: true, _count: { select: { forms: true } } },
+    });
+
+    if (userWithPlan.role !== "ADMIN" && userWithPlan.plan && userWithPlan.plan.formLimit !== -1) {
+      if (userWithPlan._count.forms >= userWithPlan.plan.formLimit) {
+        res.status(403);
+        throw new Error(`Plan limit reached. You can only create up to ${userWithPlan.plan.formLimit} forms.`);
+      }
+    }
+
     // Validate fields structure
     for (const field of fields) {
       if (!field.name || !field.label || !field.type) {
@@ -255,6 +268,22 @@ router.post(
     if (!data || typeof data !== "object") {
       res.status(400);
       throw new Error("Please provide entry data");
+    }
+
+    // Check entry limit based on user's plan
+    const userWithPlan = await prisma.user.findUnique({
+      where: { id: req.user.id },
+      include: { plan: true },
+    });
+
+    if (userWithPlan.role !== "ADMIN" && userWithPlan.plan && userWithPlan.plan.entryLimit !== -1) {
+      const totalEntries = await prisma.entry.count({
+        where: { form: { userId: req.user.id } },
+      });
+      if (totalEntries >= userWithPlan.plan.entryLimit) {
+        res.status(403);
+        throw new Error(`Entry limit reached. Your plan allows a maximum of ${userWithPlan.plan.entryLimit} entries.`);
+      }
     }
 
     // Validate required fields

@@ -1,5 +1,6 @@
 const express = require("express");
 const asyncHandler = require("express-async-handler");
+const bcrypt = require("bcryptjs");
 const { PrismaClient } = require("@prisma/client");
 const { protect } = require("../middleware/auth");
 const { adminOnly } = require("../middleware/adminAuth");
@@ -10,6 +11,459 @@ const prisma = new PrismaClient();
 // All admin routes require auth + admin role
 router.use(protect);
 router.use(adminOnly);
+
+// ==========================================
+// REGISTRATION REQUESTS
+// ==========================================
+
+// @route   GET /api/admin/registration-requests
+// @desc    Get all registration requests
+// @access  Admin
+router.get(
+  "/registration-requests",
+  asyncHandler(async (req, res) => {
+    const { status, search = "" } = req.query;
+
+    let where = {};
+    if (status && ["PENDING", "APPROVED", "REJECTED"].includes(status)) {
+      where.status = status;
+    }
+    if (search) {
+      where.OR = [
+        { name: { contains: search } },
+        { email: { contains: search } },
+      ];
+    }
+
+    const requests = await prisma.registrationRequest.findMany({
+      where,
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json({ success: true, data: requests });
+  })
+);
+
+// @route   POST /api/admin/registration-requests/:id/approve
+// @desc    Approve a registration request and create user account
+// @access  Admin
+router.post(
+  "/registration-requests/:id/approve",
+  asyncHandler(async (req, res) => {
+    const requestId = parseInt(req.params.id);
+    const { planId, planExpiresAt, adminNote, templateIds } = req.body;
+
+    const request = await prisma.registrationRequest.findUnique({
+      where: { id: requestId },
+    });
+
+    if (!request) {
+      res.status(404);
+      throw new Error("Registration request not found");
+    }
+
+    if (request.status !== "PENDING") {
+      res.status(400);
+      throw new Error(`Request is already ${request.status.toLowerCase()}`);
+    }
+
+    // Check if user already exists (edge case)
+    const existingUser = await prisma.user.findUnique({ where: { email: request.email } });
+    if (existingUser) {
+      // Just mark request approved
+      await prisma.registrationRequest.update({
+        where: { id: requestId },
+        data: { status: "APPROVED", adminNote },
+      });
+      res.status(400);
+      throw new Error("A user with this email already exists");
+    }
+
+    // Validate plan if provided
+    let resolvedPlanId = null;
+    if (planId) {
+      const plan = await prisma.plan.findUnique({ where: { id: parseInt(planId) } });
+      if (!plan) {
+        res.status(400);
+        throw new Error("Selected plan not found");
+      }
+      resolvedPlanId = plan.id;
+    }
+
+    // Create user from the registration request
+    const user = await prisma.user.create({
+      data: {
+        name: request.name,
+        email: request.email,
+        password: request.password, // already hashed
+        mobile: request.mobile,
+        address: request.address,
+        country: request.country,
+        state: request.state,
+        gender: request.gender,
+        role: "USER",
+        planId: resolvedPlanId,
+        planStatus: resolvedPlanId ? "ACTIVE" : "INACTIVE",
+        planExpiresAt: planExpiresAt ? new Date(planExpiresAt) : null,
+        status: "ACTIVE",
+      },
+    });
+
+    // Mark request as approved
+    await prisma.registrationRequest.update({
+      where: { id: requestId },
+      data: { status: "APPROVED", adminNote: adminNote || null },
+    });
+
+    // Assign templates if provided
+    if (templateIds && Array.isArray(templateIds) && templateIds.length > 0) {
+      await prisma.userFieldTemplate.createMany({
+        data: templateIds.map(tid => ({
+          userId: user.id,
+          templateId: parseInt(tid)
+        }))
+      });
+    }
+
+    res.json({
+      success: true,
+      message: `Registration request approved. Account created for "${user.name}"`,
+      data: {
+        userId: user.id,
+        name: user.name,
+        email: user.email,
+      },
+    });
+  })
+);
+
+// @route   POST /api/admin/registration-requests/:id/reject
+// @desc    Reject a registration request
+// @access  Admin
+router.post(
+  "/registration-requests/:id/reject",
+  asyncHandler(async (req, res) => {
+    const requestId = parseInt(req.params.id);
+    const { adminNote } = req.body;
+
+    const request = await prisma.registrationRequest.findUnique({
+      where: { id: requestId },
+    });
+
+    if (!request) {
+      res.status(404);
+      throw new Error("Registration request not found");
+    }
+
+    if (request.status !== "PENDING") {
+      res.status(400);
+      throw new Error(`Request is already ${request.status.toLowerCase()}`);
+    }
+
+    await prisma.registrationRequest.update({
+      where: { id: requestId },
+      data: { status: "REJECTED", adminNote: adminNote || null },
+    });
+
+    res.json({
+      success: true,
+      message: `Registration request for "${request.name}" rejected`,
+    });
+  })
+);
+
+// @route   DELETE /api/admin/registration-requests/:id
+// @desc    Delete a registration request
+// @access  Admin
+router.delete(
+  "/registration-requests/:id",
+  asyncHandler(async (req, res) => {
+    const requestId = parseInt(req.params.id);
+
+    const request = await prisma.registrationRequest.findUnique({
+      where: { id: requestId },
+    });
+
+    if (!request) {
+      res.status(404);
+      throw new Error("Registration request not found");
+    }
+
+    await prisma.registrationRequest.delete({ where: { id: requestId } });
+
+    res.json({ success: true, message: "Registration request deleted" });
+  })
+);
+
+// ==========================================
+// ADMIN FIELD TEMPLATES
+// ==========================================
+
+// @route   GET /api/admin/field-templates
+// @desc    Get all field templates with assignment counts
+// @access  Admin
+router.get(
+  "/field-templates",
+  asyncHandler(async (req, res) => {
+    const templates = await prisma.adminFieldTemplate.findMany({
+      include: {
+        _count: { select: { assignments: true } },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+
+    res.json({ success: true, data: templates });
+  })
+);
+
+// @route   GET /api/admin/field-templates/:id
+// @desc    Get single field template with assigned users
+// @access  Admin
+router.get(
+  "/field-templates/:id",
+  asyncHandler(async (req, res) => {
+    const templateId = parseInt(req.params.id);
+
+    const template = await prisma.adminFieldTemplate.findUnique({
+      where: { id: templateId },
+      include: {
+        assignments: {
+          include: {
+            user: { select: { id: true, name: true, email: true } },
+          },
+        },
+      },
+    });
+
+    if (!template) {
+      res.status(404);
+      throw new Error("Field template not found");
+    }
+
+    res.json({ success: true, data: template });
+  })
+);
+
+// @route   POST /api/admin/field-templates
+// @desc    Create a new field template (up to 12 fields)
+// @access  Admin
+router.post(
+  "/field-templates",
+  asyncHandler(async (req, res) => {
+    const { title, description, fields } = req.body;
+
+    if (!title) {
+      res.status(400);
+      throw new Error("Title is required");
+    }
+
+    if (!fields || !Array.isArray(fields) || fields.length === 0) {
+      res.status(400);
+      throw new Error("At least one field is required");
+    }
+
+    if (fields.length > 12) {
+      res.status(400);
+      throw new Error("Maximum 12 fields allowed per template");
+    }
+
+    // Validate each field
+    for (const field of fields) {
+      if (!field.label || !field.label.trim()) {
+        res.status(400);
+        throw new Error("Each field must have a label");
+      }
+    }
+
+    // Normalize fields
+    const normalizedFields = fields.map((f, index) => ({
+      id: f.id || `field_${index + 1}`,
+      label: f.label.trim(),
+      placeholder: f.placeholder || "",
+      type: f.type || "text",
+      required: f.required || false,
+    }));
+
+    const template = await prisma.adminFieldTemplate.create({
+      data: {
+        title: title.trim(),
+        description: description || null,
+        fields: normalizedFields,
+      },
+    });
+
+    res.status(201).json({ success: true, data: template });
+  })
+);
+
+// @route   PUT /api/admin/field-templates/:id
+// @desc    Update a field template
+// @access  Admin
+router.put(
+  "/field-templates/:id",
+  asyncHandler(async (req, res) => {
+    const templateId = parseInt(req.params.id);
+    const { title, description, fields } = req.body;
+
+    const existing = await prisma.adminFieldTemplate.findUnique({ where: { id: templateId } });
+    if (!existing) {
+      res.status(404);
+      throw new Error("Field template not found");
+    }
+
+    if (fields && fields.length > 12) {
+      res.status(400);
+      throw new Error("Maximum 12 fields allowed per template");
+    }
+
+    let normalizedFields = existing.fields;
+    if (fields && Array.isArray(fields)) {
+      normalizedFields = fields.map((f, index) => ({
+        id: f.id || `field_${index + 1}`,
+        label: f.label.trim(),
+        placeholder: f.placeholder || "",
+        type: f.type || "text",
+        required: f.required || false,
+      }));
+    }
+
+    const template = await prisma.adminFieldTemplate.update({
+      where: { id: templateId },
+      data: {
+        title: title ? title.trim() : existing.title,
+        description: description !== undefined ? description : existing.description,
+        fields: normalizedFields,
+      },
+    });
+
+    res.json({ success: true, data: template });
+  })
+);
+
+// @route   DELETE /api/admin/field-templates/:id
+// @desc    Delete a field template
+// @access  Admin
+router.delete(
+  "/field-templates/:id",
+  asyncHandler(async (req, res) => {
+    const templateId = parseInt(req.params.id);
+
+    const existing = await prisma.adminFieldTemplate.findUnique({
+      where: { id: templateId },
+      include: { _count: { select: { assignments: true } } },
+    });
+
+    if (!existing) {
+      res.status(404);
+      throw new Error("Field template not found");
+    }
+
+    // Delete all assignments first, then template
+    await prisma.userFieldTemplate.deleteMany({ where: { templateId } });
+    await prisma.adminFieldTemplate.delete({ where: { id: templateId } });
+
+    res.json({ success: true, message: "Field template deleted successfully" });
+  })
+);
+
+// @route   POST /api/admin/users/:id/assign-template
+// @desc    Assign a field template to a user
+// @access  Admin
+router.post(
+  "/users/:id/assign-template",
+  asyncHandler(async (req, res) => {
+    const userId = parseInt(req.params.id);
+    const { templateId } = req.body;
+
+    if (!templateId) {
+      res.status(400);
+      throw new Error("templateId is required");
+    }
+
+    const user = await prisma.user.findUnique({ where: { id: userId } });
+    if (!user) {
+      res.status(404);
+      throw new Error("User not found");
+    }
+
+    const template = await prisma.adminFieldTemplate.findUnique({ where: { id: parseInt(templateId) } });
+    if (!template) {
+      res.status(404);
+      throw new Error("Field template not found");
+    }
+
+    // Upsert (create if not exists)
+    const assignment = await prisma.userFieldTemplate.upsert({
+      where: {
+        userId_templateId: {
+          userId,
+          templateId: parseInt(templateId),
+        },
+      },
+      update: { assignedAt: new Date() },
+      create: {
+        userId,
+        templateId: parseInt(templateId),
+      },
+    });
+
+    res.json({
+      success: true,
+      message: `Template "${template.title}" assigned to "${user.name}"`,
+      data: assignment,
+    });
+  })
+);
+
+// @route   DELETE /api/admin/users/:id/unassign-template/:templateId
+// @desc    Remove a field template assignment from a user
+// @access  Admin
+router.delete(
+  "/users/:id/unassign-template/:templateId",
+  asyncHandler(async (req, res) => {
+    const userId = parseInt(req.params.id);
+    const templateId = parseInt(req.params.templateId);
+
+    const assignment = await prisma.userFieldTemplate.findUnique({
+      where: { userId_templateId: { userId, templateId } },
+    });
+
+    if (!assignment) {
+      res.status(404);
+      throw new Error("Assignment not found");
+    }
+
+    await prisma.userFieldTemplate.delete({
+      where: { userId_templateId: { userId, templateId } },
+    });
+
+    res.json({ success: true, message: "Template unassigned successfully" });
+  })
+);
+
+// @route   GET /api/admin/users/:id/templates
+// @desc    Get all templates assigned to a user
+// @access  Admin
+router.get(
+  "/users/:id/templates",
+  asyncHandler(async (req, res) => {
+    const userId = parseInt(req.params.id);
+
+    const assignments = await prisma.userFieldTemplate.findMany({
+      where: { userId },
+      include: {
+        template: true,
+      },
+      orderBy: { assignedAt: "desc" },
+    });
+
+    res.json({ success: true, data: assignments });
+  })
+);
+
+// ==========================================
+// ADMIN USERS
+// ==========================================
 
 // @route   GET /api/admin/users
 // @desc    Get all users with form/entry counts
@@ -40,10 +494,13 @@ router.get(
         planId: true,
         planStatus: true,
         planExpiresAt: true,
+        status: true,
         createdAt: true,
+        plan: { select: { name: true } },
         _count: {
           select: {
             forms: true,
+            fieldTemplateAssignments: true,
           },
         },
       },
@@ -54,22 +511,57 @@ router.get(
     const usersWithEntries = await Promise.all(
       users.map(async (user) => {
         const entryCount = await prisma.entry.count({
-          where: {
-            form: { userId: user.id },
-          },
+          where: { form: { userId: user.id } },
         });
         return {
           ...user,
           forms: user._count.forms,
           entries: entryCount,
+          assignedTemplates: user._count.fieldTemplateAssignments,
           _count: undefined,
         };
       })
     );
 
+    res.json({ success: true, data: usersWithEntries });
+  })
+);
+
+// @route   GET /api/admin/users/:id
+// @desc    Get detailed user info including plan and templates
+// @access  Admin
+router.get(
+  "/users/:id",
+  asyncHandler(async (req, res) => {
+    const userId = parseInt(req.params.id);
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: {
+        plan: true,
+        fieldTemplateAssignments: {
+          include: { template: true },
+          orderBy: { assignedAt: "desc" },
+        },
+        _count: { select: { forms: true } },
+      },
+    });
+
+    if (!user) {
+      res.status(404);
+      throw new Error("User not found");
+    }
+
+    const entryCount = await prisma.entry.count({ where: { form: { userId } } });
+
     res.json({
       success: true,
-      data: usersWithEntries,
+      data: {
+        ...user,
+        formsCount: user._count.forms,
+        entriesCount: entryCount,
+        _count: undefined,
+      },
     });
   })
 );
@@ -82,77 +574,22 @@ router.delete(
   asyncHandler(async (req, res) => {
     const userId = parseInt(req.params.id);
 
-    // Prevent self-deletion
     if (userId === req.user.id) {
       res.status(400);
       throw new Error("You cannot delete your own account");
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       res.status(404);
       throw new Error("User not found");
     }
 
-    // Cascade delete: entries -> forms -> user
-    await prisma.user.delete({
-      where: { id: userId },
-    });
+    await prisma.user.delete({ where: { id: userId } });
 
     res.json({
       success: true,
       message: `User "${user.name}" and all their data deleted successfully`,
-    });
-  })
-);
-
-// @route   GET /api/admin/users/:id
-// @desc    Get detailed user info including plan and transactions
-// @access  Admin
-router.get(
-  "/users/:id",
-  asyncHandler(async (req, res) => {
-    const userId = parseInt(req.params.id);
-
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      include: {
-        plan: true,
-        transactions: {
-          orderBy: { createdAt: "desc" },
-        },
-        _count: {
-          select: { forms: true }
-        }
-      },
-    });
-
-    if (!user) {
-      res.status(404);
-      throw new Error("User not found");
-    }
-
-    // Get total entries
-    const entryCount = await prisma.entry.count({
-      where: { form: { userId } }
-    });
-
-    // Determine plan start date (latest successful transaction)
-    const latestSuccessTxn = user.transactions.find((t) => t.status === "SUCCESS" && t.planId === user.planId);
-    const planStartedAt = latestSuccessTxn ? latestSuccessTxn.createdAt : user.createdAt;
-
-    res.json({
-      success: true,
-      data: {
-        ...user,
-        formsCount: user._count.forms,
-        entriesCount: entryCount,
-        planStartedAt,
-        _count: undefined,
-      },
     });
   })
 );
@@ -166,7 +603,6 @@ router.put(
     const userId = parseInt(req.params.id);
     const { role } = req.body;
 
-    // Prevent self role change
     if (userId === req.user.id) {
       res.status(400);
       throw new Error("You cannot change your own role");
@@ -177,10 +613,7 @@ router.put(
       throw new Error("Role must be USER or ADMIN");
     }
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-    });
-
+    const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
       res.status(404);
       throw new Error("User not found");
@@ -189,12 +622,7 @@ router.put(
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: { role },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        role: true,
-      },
+      select: { id: true, name: true, email: true, role: true },
     });
 
     res.json({
@@ -204,6 +632,7 @@ router.put(
     });
   })
 );
+
 // @route   PUT /api/admin/users/:id
 // @desc    Update user details and subscription plan
 // @access  Admin
@@ -211,26 +640,21 @@ router.put(
   "/users/:id",
   asyncHandler(async (req, res) => {
     const userId = parseInt(req.params.id);
-    const { name, email, mobile, planId, planStatus, planExpiresAt } = req.body;
+    const { name, email, mobile, planId, planStatus, planExpiresAt, status } = req.body;
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
-
     if (!user) {
       res.status(404);
       throw new Error("User not found");
     }
 
-    // Prepare update data
-    const updateData = { name, email, mobile };
-    
-    let isPlanChanged = false;
+    const updateData = {};
+    if (name !== undefined) updateData.name = name;
+    if (mobile !== undefined) updateData.mobile = mobile;
+    if (status !== undefined) updateData.status = status;
 
     if (planId !== undefined) {
-      const newPlanId = planId ? parseInt(planId) : null;
-      if (user.planId !== newPlanId) {
-        isPlanChanged = true;
-      }
-      updateData.planId = newPlanId;
+      updateData.planId = planId ? parseInt(planId) : null;
     }
     if (planStatus !== undefined) {
       updateData.planStatus = planStatus;
@@ -239,13 +663,14 @@ router.put(
       updateData.planExpiresAt = planExpiresAt ? new Date(planExpiresAt) : null;
     }
 
-    // If email is changed, ensure it's not taken by another user
+    // If email is changed, ensure it's not taken
     if (email && email !== user.email) {
       const emailExists = await prisma.user.findUnique({ where: { email } });
       if (emailExists) {
         res.status(400);
         throw new Error("Email already in use");
       }
+      updateData.email = email;
     }
 
     const updatedUser = await prisma.user.update({
@@ -260,21 +685,9 @@ router.put(
         planId: true,
         planStatus: true,
         planExpiresAt: true,
+        status: true,
       },
     });
-
-    // If admin manually assigned a new plan, create a 0-rupee audit transaction
-    if (isPlanChanged && updateData.planId) {
-      await prisma.transaction.create({
-        data: {
-          txnid: `ADMIN_UPGRADE_${Date.now()}_${userId}`,
-          userId: userId,
-          planId: updateData.planId,
-          amount: 0,
-          status: "SUCCESS",
-        }
-      });
-    }
 
     res.json({
       success: true,
@@ -310,15 +723,8 @@ router.get(
     const forms = await prisma.form.findMany({
       where,
       include: {
-        user: {
-          select: {
-            name: true,
-            email: true,
-          }
-        },
-        _count: {
-          select: { entries: true }
-        }
+        user: { select: { name: true, email: true } },
+        _count: { select: { entries: true } },
       },
       orderBy: { createdAt: "desc" },
     });
@@ -348,32 +754,6 @@ router.delete(
 );
 
 // ==========================================
-// ADMIN TRANSACTIONS
-// ==========================================
-
-// @route   GET /api/admin/transactions
-// @desc    Get all transactions in the system
-// @access  Admin
-router.get(
-  "/transactions",
-  asyncHandler(async (req, res) => {
-    const transactions = await prisma.transaction.findMany({
-      include: {
-        user: {
-          select: { name: true, email: true }
-        },
-        plan: {
-          select: { name: true, price: true }
-        }
-      },
-      orderBy: { createdAt: "desc" }
-    });
-
-    res.json({ success: true, data: transactions });
-  })
-);
-
-// ==========================================
 // ADMIN PLANS
 // ==========================================
 
@@ -385,14 +765,9 @@ router.get(
   asyncHandler(async (req, res) => {
     const plans = await prisma.plan.findMany({
       include: {
-        _count: {
-          select: { users: true }
-        }
+        _count: { select: { users: true } },
       },
-      orderBy: [
-        { displayOrder: 'asc' },
-        { price: 'asc' }
-      ]
+      orderBy: [{ displayOrder: "asc" }, { price: "asc" }],
     });
     res.json({ success: true, data: plans });
   })
@@ -410,14 +785,14 @@ router.post(
       data: {
         name,
         description,
-        price,
-        period,
-        features,
-        formLimit,
-        entryLimit,
+        price: parseInt(price) || 0,
+        period: period || "monthly",
+        features: features || [],
+        formLimit: parseInt(formLimit) || -1,
+        entryLimit: parseInt(entryLimit) || -1,
         isActive: isActive !== undefined ? isActive : true,
-        displayOrder: displayOrder !== undefined ? displayOrder : 0
-      }
+        displayOrder: displayOrder !== undefined ? parseInt(displayOrder) : 0,
+      },
     });
 
     res.status(201).json({ success: true, data: plan });
@@ -444,14 +819,14 @@ router.put(
       data: {
         name,
         description,
-        price,
+        price: price !== undefined ? parseInt(price) : undefined,
         period,
         features,
-        formLimit,
-        entryLimit,
+        formLimit: formLimit !== undefined ? parseInt(formLimit) : undefined,
+        entryLimit: entryLimit !== undefined ? parseInt(entryLimit) : undefined,
         isActive,
-        displayOrder
-      }
+        displayOrder: displayOrder !== undefined ? parseInt(displayOrder) : undefined,
+      },
     });
 
     res.json({ success: true, data: plan });
@@ -466,17 +841,16 @@ router.delete(
   asyncHandler(async (req, res) => {
     const planId = parseInt(req.params.id);
 
-    const planExists = await prisma.plan.findUnique({ 
+    const planExists = await prisma.plan.findUnique({
       where: { id: planId },
-      include: { _count: { select: { users: true } } }
+      include: { _count: { select: { users: true } } },
     });
-    
+
     if (!planExists) {
       res.status(404);
       throw new Error("Plan not found");
     }
 
-    // Don't delete if users are subscribed to it
     if (planExists._count.users > 0) {
       res.status(400);
       throw new Error("Cannot delete plan. Users are currently subscribed to it.");
@@ -491,44 +865,6 @@ router.delete(
 // ADMIN SETTINGS
 // ==========================================
 
-// @route   PUT /api/admin/settings/gst
-// @desc    Update global GST percentage
-// @access  Admin
-router.put(
-  "/settings/gst",
-  asyncHandler(async (req, res) => {
-    const { gst } = req.body;
-
-    if (gst === undefined || isNaN(parseFloat(gst))) {
-      res.status(400);
-      throw new Error("Please provide a valid GST percentage");
-    }
-
-    const updatedSetting = await prisma.setting.upsert({
-      where: { key: "GST_PERCENTAGE" },
-      update: { value: String(gst) },
-      create: { key: "GST_PERCENTAGE", value: String(gst) },
-    });
-
-    res.json({ success: true, data: { gst: parseFloat(updatedSetting.value) }, message: "GST updated successfully" });
-  })
-);
-
-// @route   GET /api/admin/settings/gst
-// @desc    Get global GST percentage
-// @access  Admin
-router.get(
-  "/settings/gst",
-  asyncHandler(async (req, res) => {
-    const gstSetting = await prisma.setting.findUnique({
-      where: { key: "GST_PERCENTAGE" },
-    });
-    
-    const gstValue = gstSetting ? parseFloat(gstSetting.value) : 18;
-    res.json({ success: true, data: { gst: gstValue } });
-  })
-);
-
 // @route   GET /api/admin/settings/announcement
 // @desc    Get global announcement banner
 // @access  Admin
@@ -538,7 +874,7 @@ router.get(
     const annSetting = await prisma.setting.findUnique({
       where: { key: "SYSTEM_ANNOUNCEMENT" },
     });
-    
+
     let announcement = { message: "", isActive: false };
     if (annSetting && annSetting.value) {
       try {

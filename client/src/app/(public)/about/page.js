@@ -1,6 +1,6 @@
 "use client";
 
-import Navbar from "@/components/Navbar";
+
 import Link from "next/link";
 import { ArrowRight, Shield, Zap, Globe, Heart } from "lucide-react";
 
@@ -9,9 +9,8 @@ export default function AboutPage() {
     <>
       <div className="bg-mesh"></div>
       <div className="bg-blob-accent"></div>
-      <Navbar />
 
-      <main style={{ padding: '80px 24px 120px', maxWidth: 1000, margin: '0 auto' }}>
+      <main style={{ padding: '32px 24px 120px', maxWidth: 1100, margin: '0 auto' }}>
         <div className="animate-fade-in-up" style={{ textAlign: 'center', marginBottom: 80 }}>
           <div className="badge badge-primary" style={{ marginBottom: 24, padding: '8px 16px', background: '#eff6ff', color: '#2563eb', border: '1px solid #bfdbfe' }}>
             <Heart size={16} style={{ marginRight: 8 }} />
@@ -26,7 +25,7 @@ export default function AboutPage() {
           </p>
         </div>
 
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))', gap: 32, marginBottom: 80 }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 32, marginBottom: 80 }}>
           <div className="glass-card animate-fade-in-up" style={{ padding: 40, animationDelay: '0.1s' }}>
             <div style={{ width: 56, height: 56, borderRadius: 16, background: '#eff6ff', display: 'flex', alignItems: 'center', justifyContent: 'center', marginBottom: 24, border: '1px solid #bfdbfe' }}>
               <Zap size={28} style={{ color: '#2563eb' }} />
@@ -61,19 +60,15 @@ export default function AboutPage() {
         <div className="glass-card animate-fade-in-up" style={{ padding: 60, textAlign: 'center', background: 'linear-gradient(135deg, #ffffff, #f1f5f9)', animationDelay: '0.4s' }}>
           <h2 style={{ fontSize: 32, fontWeight: 800, color: '#0f172a', marginBottom: 16 }}>Ready to join us?</h2>
           <p style={{ fontSize: 18, color: '#475569', marginBottom: 32, maxWidth: 600, margin: '0 auto 32px' }}>
-            Start building forms and collecting data in minutes. No credit card required to start.
+            Submit your registration request today to get started. Admin approval required.
           </p>
           <Link href="/register" className="btn-primary" style={{ padding: '16px 40px', fontSize: 18 }}>
-            Create Your Account <ArrowRight size={18} />
+            Request Access <ArrowRight size={18} />
           </Link>
         </div>
       </main>
-
-      <footer style={{ borderTop: '1px solid rgba(15, 23, 42, 0.06)', padding: '16px 20px', textAlign: 'center', background: '#ffffff', position: 'relative', zIndex: 10 }}>
-        <p style={{ color: '#94a3b8', fontSize: 13, fontWeight: 500, margin: 0 }}>
-          Designed & Developed by Veagle Space Technology Pvt. Ltd. | © 2026 All Rights Reserved.
-        </p>
-      </footer>
     </>
+
+
   );
 }

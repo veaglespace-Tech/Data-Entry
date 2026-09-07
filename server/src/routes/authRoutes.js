@@ -25,63 +25,61 @@ const generateResetToken = (id, email) => {
 };
 
 // @route   POST /api/auth/register
-// @desc    Register a new user
+// @desc    Submit a registration request (pending admin approval)
 // @access  Public
 router.post(
   "/register",
   validate(registerSchema),
   asyncHandler(async (req, res) => {
-    const { name, email, password, role, mobile, address, country, state, gender } = req.body;
+    const { name, email, password, mobile, address, country, state, gender } = req.body;
 
-    // Check if user already exists
-    const userExists = await prisma.user.findUnique({
-      where: { email },
-    });
-
+    // Check if user already exists in User table (already approved)
+    const userExists = await prisma.user.findUnique({ where: { email } });
     if (userExists) {
       res.status(400);
-      throw new Error("User already exists with this email");
+      throw new Error("An account with this email already exists.");
+    }
+
+    // Check if a pending request already exists
+    const existingRequest = await prisma.registrationRequest.findUnique({ where: { email } });
+    if (existingRequest) {
+      if (existingRequest.status === "PENDING") {
+        res.status(400);
+        throw new Error("A registration request with this email is already pending admin approval.");
+      }
+      if (existingRequest.status === "REJECTED") {
+        res.status(400);
+        throw new Error("Your previous registration request was rejected. Please contact the admin.");
+      }
     }
 
     // Hash password
     const salt = await bcrypt.genSalt(10);
     const hashedPassword = await bcrypt.hash(password, salt);
 
-    // Validate role
-    const validRole = role === "ADMIN" ? "ADMIN" : "USER";
-
-    // Create user
-    const user = await prisma.user.create({
+    // Create registration request (not a user yet)
+    const request = await prisma.registrationRequest.create({
       data: {
         name,
         email,
-        mobile,
         password: hashedPassword,
-        role: validRole,
-        planStatus: "INACTIVE",
+        mobile,
         address,
         country,
         state,
-        gender
+        gender,
+        status: "PENDING",
       },
     });
 
     res.status(201).json({
       success: true,
+      message: "Registration request submitted successfully! Admin will review and approve your account. You'll be able to login once approved.",
       data: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        mobile: user.mobile,
-        role: user.role,
-        planId: user.planId,
-        planStatus: user.planStatus,
-        planExpiresAt: user.planExpiresAt,
-        address: user.address,
-        country: user.country,
-        state: user.state,
-        gender: user.gender,
-        token: generateToken(user.id),
+        id: request.id,
+        name: request.name,
+        email: request.email,
+        status: request.status,
       },
     });
   })
@@ -102,13 +100,30 @@ router.post(
     });
 
     if (!user) {
+      // Check if they have a pending/rejected registration request
+      const request = await prisma.registrationRequest.findUnique({ where: { email } });
+      if (request) {
+        if (request.status === "PENDING") {
+          res.status(403);
+          throw new Error("Your registration is pending admin approval. Please wait for approval.");
+        }
+        if (request.status === "REJECTED") {
+          res.status(403);
+          throw new Error("Your registration request was rejected. Please contact the admin.");
+        }
+      }
       res.status(401);
       throw new Error("Invalid email or password");
     }
 
+    // Check if account is banned/inactive
+    if (user.status === "BANNED") {
+      res.status(403);
+      throw new Error("Your account has been suspended. Please contact the admin.");
+    }
+
     // Check password
     const isMatch = await bcrypt.compare(password, user.password);
-
     if (!isMatch) {
       res.status(401);
       throw new Error("Invalid email or password");

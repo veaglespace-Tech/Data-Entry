@@ -21,12 +21,11 @@ app.use(helmet());
 // 2. CORS - Allow only our frontend domain
 const allowedOrigins = [
   "http://localhost:3000",
-  process.env.CLIENT_URL, // e.g. https://yourdomain.com
+  process.env.CLIENT_URL,
 ].filter(Boolean);
 
 app.use(cors({
   origin: (origin, callback) => {
-    // Allow requests with no origin (e.g., Postman, server-to-server)
     if (!origin || allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
@@ -38,7 +37,7 @@ app.use(cors({
 
 // 3. General API Rate Limiter - 100 requests per 15 min per IP
 const generalLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
+  windowMs: 15 * 60 * 1000,
   max: 100,
   standardHeaders: true,
   legacyHeaders: false,
@@ -50,8 +49,8 @@ const generalLimiter = rateLimit({
 
 // 4. Strict limiter for Auth routes - prevents brute force attacks
 const authLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // only 20 login attempts per 15 min
+  windowMs: 15 * 60 * 1000,
+  max: 20,
   standardHeaders: true,
   legacyHeaders: false,
   message: {
@@ -73,16 +72,12 @@ const authRoutes = require("./routes/authRoutes");
 const adminRoutes = require("./routes/adminRoutes");
 const formRoutes = require("./routes/formRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
-const paymentRoutes = require("./routes/paymentRoutes");
-const planRoutes = require("./routes/planRoutes");
 
 // Apply stricter rate limit to auth endpoints
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/forms", formRoutes);
 app.use("/api/dashboard", dashboardRoutes);
-app.use("/api/payment", paymentRoutes);
-app.use("/api/plans", planRoutes);
 
 // Health check
 app.get("/api/health", (req, res) => {
@@ -97,4 +92,3 @@ app.listen(PORT, () => {
   console.log(`🔒 Security: Helmet + Rate Limiting enabled`);
   console.log(`🌐 CORS allowed origins: ${allowedOrigins.join(", ")}`);
 });
-

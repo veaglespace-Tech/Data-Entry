@@ -25,7 +25,13 @@ export default function LoginPage() {
       toast.success("Login successful!");
       router.push("/dashboard");
     } catch (error) {
-      toast.error(error.data?.message || "Login failed");
+      const msg = error.data?.message || "Login failed";
+      // Show more visible message for pending/rejected status
+      if (msg.includes("pending") || msg.includes("rejected") || msg.includes("suspended")) {
+        toast(msg, { duration: 6000, icon: "⏳", style: { background: "#fef9c3", color: "#92400e", border: "1px solid #fde68a" } });
+      } else {
+        toast.error(msg);
+      }
     }
   };
 
@@ -110,7 +116,7 @@ export default function LoginPage() {
         <p style={{ textAlign: 'center', marginTop: 32, fontSize: 15, color: '#64748b' }}>
           Don't have an account?{" "}
           <Link href="/register" style={{ color: '#2563eb', fontWeight: 700, textDecoration: 'none' }}>
-            Sign up for free
+            Submit a Registration Request
           </Link>
         </p>
         </div>

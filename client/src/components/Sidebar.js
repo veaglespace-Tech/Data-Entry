@@ -5,21 +5,22 @@ import Link from "next/link";
 import { useRouter, usePathname } from "next/navigation";
 import { useSelector, useDispatch } from "react-redux";
 import { selectCurrentUser, selectIsAdmin, logout } from "@/redux/slice/authSlice";
+import { useGetRegistrationRequestsQuery } from "@/redux/api/apiSlice";
 import toast from "react-hot-toast";
 import {
   LayoutDashboard,
   FileText,
-  Plus,
   Users,
   Settings,
   ChevronRight,
-  Sparkles,
   LogOut,
-  CreditCard,
   Star,
   Shield,
   Menu,
-  X
+  X,
+  ClipboardList,
+  Layers,
+  Download,
 } from "lucide-react";
 
 export default function Sidebar() {
@@ -30,6 +31,9 @@ export default function Sidebar() {
   const router = useRouter();
   const [isOpen, setIsOpen] = useState(false);
 
+  const { data: reqData } = useGetRegistrationRequestsQuery({ status: "PENDING" }, { skip: !isAdmin });
+  const pendingCount = reqData?.data?.length || 0;
+
   const handleLogout = () => {
     dispatch(logout());
     toast.success("Logged out successfully");
@@ -38,39 +42,37 @@ export default function Sidebar() {
 
   const userNavItems = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
-    { label: "My Forms", href: "/forms", icon: FileText },
-    { label: "New Form", href: "/forms/new", icon: Plus },
-    { label: "My Subscription", href: "/dashboard/subscription", icon: CreditCard },
+    { label: "Field Entry", href: "/field-entry", icon: FileText },
+    { label: "My Entries", href: "/my-entries", icon: ClipboardList },
   ];
 
   const adminNavItems = [
     { label: "Dashboard", href: "/dashboard", icon: LayoutDashboard },
+    { label: "Registration Requests", href: "/admin/registration-requests", icon: ClipboardList, badge: pendingCount },
     { label: "Manage Users", href: "/admin/users", icon: Users },
+    { label: "Field Templates", href: "/admin/field-templates", icon: Layers },
     { label: "System Forms", href: "/admin/forms", icon: Shield },
-    { label: "Transactions", href: "/admin/transactions", icon: CreditCard },
     { label: "Manage Plans", href: "/admin/plans", icon: Star },
   ];
 
   const allItems = isAdmin ? adminNavItems : userNavItems;
 
-  // Get user initials
   const initials = user?.name
-    ? user.name
-        .split(" ")
-        .map((n) => n[0])
-        .join("")
-        .toUpperCase()
-        .slice(0, 2)
+    ? user.name.split(" ").map((n) => n[0]).join("").toUpperCase().slice(0, 2)
     : "U";
 
-  // Close sidebar on navigation on mobile
-  const handleNavClick = () => {
-    setIsOpen(false);
+  const handleNavClick = () => setIsOpen(false);
+
+  const isActive = (item) => {
+    return (
+      pathname === item.href ||
+      (item.href !== "/dashboard" && pathname.startsWith(item.href))
+    );
   };
 
   return (
     <>
-      {/* Mobile Toggle Button */}
+      {/* Mobile Toggle */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         className="md:hidden fixed top-6 right-6 z-[60] p-2 bg-white rounded-xl shadow-[0_4px_12px_rgba(0,0,0,0.1)] border border-slate-200 text-slate-800 transition-all hover:scale-105 active:scale-95"
@@ -80,7 +82,7 @@ export default function Sidebar() {
 
       {/* Overlay for mobile */}
       {isOpen && (
-        <div 
+        <div
           className="md:hidden fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-[45]"
           onClick={() => setIsOpen(false)}
         />
@@ -92,288 +94,99 @@ export default function Sidebar() {
         }`}
         style={{
           width: 272,
-          background: "linear-gradient(180deg, #0f172a 0%, #1e293b 100%)",
+          background: "linear-gradient(180deg, #ffffff 0%, #f8fafc 100%)",
           padding: "28px 16px 20px",
           gap: 4,
-          borderRight: "1px solid rgba(255,255,255,0.04)",
+          borderRight: "1px solid rgba(15,23,42,0.06)",
           overflowY: "auto",
         }}
       >
         <style jsx>{`
-          .hide-scrollbar::-webkit-scrollbar {
-            display: none;
-          }
-          .hide-scrollbar {
-            -ms-overflow-style: none;
-            scrollbar-width: none;
-          }
+          .hide-scrollbar::-webkit-scrollbar { display: none; }
+          .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
         `}</style>
+
         {/* Brand Logo */}
         <div style={{ padding: "0 12px", marginBottom: 26, display: "flex", alignItems: "center", gap: 14 }}>
           <div style={{ width: 54, height: 54, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
-            <img 
-              src="/veagle-logo.webp" 
-              alt="Main Brand Logo" 
-              className="animate-flip-y"
-              style={{ width: "100%", height: "100%", objectFit: "contain" }}
-            />
+            <img src="/veagle-logo.webp" alt="Logo" className="animate-flip-y" style={{ width: "100%", height: "100%", objectFit: "contain" }} />
           </div>
-          <span style={{ fontSize: 24, fontWeight: 800, color: "#f8fafc", letterSpacing: "-0.02em" }}>
-            DataVault
-          </span>
+          <span style={{ fontSize: 24, fontWeight: 800, color: "var(--foreground)", letterSpacing: "-0.02em" }}>DataVault</span>
         </div>
 
         {/* User Profile Card */}
-        <div
-          style={{
-            padding: "16px",
-            borderRadius: 16,
-            background: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(255,255,255,0.06)",
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            marginBottom: 20,
-          }}
-        >
-          <div
-            style={{
-              width: 42,
-              height: 42,
-              borderRadius: 12,
-              background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              color: "white",
-              fontSize: 15,
-              fontWeight: 800,
-              letterSpacing: "0.02em",
-              flexShrink: 0,
-            }}
-          >
+        <div style={{ padding: "16px", borderRadius: 16, background: "#f1f5f9", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: 12, marginBottom: 20 }}>
+          <div style={{ width: 42, height: 42, borderRadius: 12, background: "linear-gradient(135deg, #f43f5e, #8b5cf6)", display: "flex", alignItems: "center", justifyContent: "center", color: "white", fontSize: 15, fontWeight: 800, flexShrink: 0 }}>
             {initials}
           </div>
           <div style={{ overflow: "hidden" }}>
-            <p
-              style={{
-                fontSize: 14,
-                fontWeight: 700,
-                color: "#f1f5f9",
-                whiteSpace: "nowrap",
-                textOverflow: "ellipsis",
-                overflow: "hidden",
-                margin: 0,
-              }}
-            >
+            <p style={{ fontSize: 14, fontWeight: 700, color: "var(--foreground)", whiteSpace: "nowrap", textOverflow: "ellipsis", overflow: "hidden", margin: 0 }}>
               {user?.name || "User"}
             </p>
-            <span
-              style={{
-                fontSize: 11,
-                fontWeight: 600,
-                color: isAdmin ? "#38bdf8" : "#94a3b8",
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 4,
-                marginTop: 2,
-              }}
-            >
-              {isAdmin ? "Super Admin" : "User Account"}
+            <span style={{ fontSize: 11, fontWeight: 600, color: isAdmin ? "var(--primary)" : "#64748b", display: "inline-flex", alignItems: "center", gap: 4, marginTop: 2 }}>
+              {isAdmin ? "Super Admin" : `${user?.planStatus === "ACTIVE" ? "Active" : "No"} Plan`}
             </span>
           </div>
         </div>
 
         {/* Navigation Label */}
-        <p
-          style={{
-            fontSize: 11,
-            fontWeight: 700,
-            textTransform: "uppercase",
-            letterSpacing: "0.12em",
-            color: "#475569",
-            padding: "0 14px",
-            marginBottom: 8,
-          }}
-        >
+        <p style={{ fontSize: 11, fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.12em", color: "#475569", padding: "0 14px", marginBottom: 8 }}>
           {isAdmin ? "Admin Console" : "Main Menu"}
         </p>
 
         {/* Nav Items */}
         {allItems.map((item) => {
-          const isActive =
-            pathname === item.href ||
-            (item.href === "/forms" &&
-              pathname.startsWith("/forms") &&
-              pathname !== "/forms/new") ||
-            (item.href === "/admin/forms" &&
-              pathname.startsWith("/admin/forms")) ||
-            (item.href === "/admin/users" &&
-              pathname.startsWith("/admin/users"));
+          const active = isActive(item);
           const Icon = item.icon;
-
           return (
-            <div key={item.href}>
+            <div key={item.href + item.label}>
               <Link
                 href={item.href}
                 onClick={handleNavClick}
                 style={{
-                  display: "flex",
-                  alignItems: "center",
-                  gap: 12,
-                  padding: "11px 14px",
-                  borderRadius: 12,
-                  fontSize: 14,
-                  fontWeight: isActive ? 600 : 500,
-                  color: isActive ? "#ffffff" : "#94a3b8",
-                  background: isActive
-                    ? "linear-gradient(135deg, rgba(59,130,246,0.2), rgba(139,92,246,0.15))"
-                    : "transparent",
-                  textDecoration: "none",
-                  transition: "all 0.2s ease",
-                  position: "relative",
-                  border: isActive
-                    ? "1px solid rgba(59,130,246,0.2)"
-                    : "1px solid transparent",
+                  display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderRadius: 12,
+                  fontSize: 14, fontWeight: active ? 600 : 500,
+                  color: active ? "white" : "var(--foreground)",
+                  background: active ? "linear-gradient(135deg, #f43f5e, #8b5cf6)" : "transparent",
+                  textDecoration: "none", transition: "all 0.3s cubic-bezier(0.16, 1, 0.3, 1)",
+                  position: "relative", border: "none",
+                  boxShadow: active ? "0 8px 20px rgba(139, 92, 246, 0.3)" : "none",
                 }}
-                onMouseEnter={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.background =
-                      "rgba(255,255,255,0.04)";
-                    e.currentTarget.style.color = "#e2e8f0";
-                  }
-                }}
-                onMouseLeave={(e) => {
-                  if (!isActive) {
-                    e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = "#94a3b8";
-                  }
-                }}
+                onMouseEnter={(e) => { if (!active) { e.currentTarget.style.background = "rgba(139, 92, 246, 0.08)"; e.currentTarget.style.color = "#4f46e5"; } }}
+                onMouseLeave={(e) => { if (!active) { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "var(--foreground)"; } }}
               >
-                {isActive && (
-                  <div
-                    style={{
-                      position: "absolute",
-                      left: 0,
-                      top: "50%",
-                      transform: "translateY(-50%)",
-                      width: 3,
-                      height: 20,
-                      borderRadius: "0 4px 4px 0",
-                      background: "linear-gradient(180deg, #3b82f6, #8b5cf6)",
-                    }}
-                  />
+                {active && (
+                  <div style={{ position: "absolute", left: 0, top: "50%", transform: "translateY(-50%)", width: 3, height: 20, borderRadius: "0 4px 4px 0", background: "linear-gradient(180deg, #f43f5e, #8b5cf6)" }} />
                 )}
-                <Icon size={18} />
-                {item.label}
-                {isActive && (
-                  <ChevronRight
-                    size={14}
-                    style={{ marginLeft: "auto", opacity: 0.5 }}
-                  />
-                )}
-              </Link>
+                  <div style={{ display: "flex", alignItems: "center", gap: 12, flex: 1 }}>
+                    <Icon size={18} />
+                    <span style={{ fontSize: 14, fontWeight: active ? 700 : 600 }}>{item.label}</span>
+                  </div>
+                  {item.badge !== undefined && item.badge > 0 && (
+                    <span style={{
+                      background: "#ef4444", color: "white", fontSize: 11, fontWeight: 800,
+                      padding: "2px 8px", borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center"
+                    }}>
+                      {item.badge}
+                    </span>
+                  )}
+                  {active && (
+                    <ChevronRight size={16} className="ml-auto opacity-70" />
+                  )}
+                </Link>
             </div>
           );
         })}
 
-        {/* Spacer */}
         <div style={{ flex: 1, minHeight: 20 }} />
-
-        {/* Upgrade Card */}
-        {user?.planStatus !== "ACTIVE" && !isAdmin && (
-          <div
-            style={{
-              padding: "20px",
-              borderRadius: 16,
-              background:
-                "linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.12))",
-              border: "1px solid rgba(59,130,246,0.15)",
-              textAlign: "center",
-              marginBottom: 16
-            }}
-          >
-            <div
-              style={{
-                width: 40,
-                height: 40,
-                borderRadius: 12,
-                background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "center",
-                margin: "0 auto 12px",
-                boxShadow: "0 4px 15px rgba(59,130,246,0.3)",
-              }}
-            >
-              <Sparkles size={18} color="white" />
-            </div>
-            <h4
-              style={{
-                fontSize: 14,
-                fontWeight: 700,
-                color: "#f1f5f9",
-                marginBottom: 6,
-              }}
-            >
-              Upgrade to Pro
-            </h4>
-            <p
-              style={{
-                fontSize: 12,
-                color: "#64748b",
-                lineHeight: 1.5,
-                marginBottom: 14,
-              }}
-            >
-              Unlock unlimited forms & analytics
-            </p>
-            <Link
-              href="/subscription"
-              onClick={handleNavClick}
-              style={{
-                display: "block",
-                padding: "9px 16px",
-                fontSize: 13,
-                fontWeight: 700,
-                background: "linear-gradient(135deg, #3b82f6, #8b5cf6)",
-                color: "white",
-                borderRadius: 10,
-                textDecoration: "none",
-                textAlign: "center",
-                transition: "all 0.2s ease",
-                boxShadow: "0 4px 12px rgba(59,130,246,0.3)",
-              }}
-            >
-              Upgrade Now
-            </Link>
-          </div>
-        )}
 
         {/* Settings Link */}
         <Link
           href="/settings"
           onClick={handleNavClick}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            padding: "11px 14px",
-            borderRadius: 12,
-            fontSize: 14,
-            fontWeight: 500,
-            color: "#64748b",
-            textDecoration: "none",
-            transition: "all 0.2s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(255,255,255,0.04)";
-            e.currentTarget.style.color = "#e2e8f0";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-            e.currentTarget.style.color = "#64748b";
-          }}
+          style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderRadius: 12, fontSize: 14, fontWeight: 500, color: "#64748b", textDecoration: "none", transition: "all 0.2s ease" }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "#f1f5f9"; e.currentTarget.style.color = "#0f172a"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; e.currentTarget.style.color = "#64748b"; }}
         >
           <Settings size={18} />
           Settings
@@ -382,34 +195,16 @@ export default function Sidebar() {
         {/* Logout Button */}
         <button
           onClick={handleLogout}
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 12,
-            padding: "11px 14px",
-            borderRadius: 12,
-            fontSize: 14,
-            fontWeight: 500,
-            color: "#ef4444",
-            background: "transparent",
-            border: "none",
-            cursor: "pointer",
-            textAlign: "left",
-            transition: "all 0.2s ease",
-          }}
-          onMouseEnter={(e) => {
-            e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)";
-          }}
-          onMouseLeave={(e) => {
-            e.currentTarget.style.background = "transparent";
-          }}
+          style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderRadius: 12, fontSize: 14, fontWeight: 500, color: "#ef4444", background: "transparent", border: "none", cursor: "pointer", textAlign: "left", transition: "all 0.2s ease" }}
+          onMouseEnter={(e) => { e.currentTarget.style.background = "rgba(239, 68, 68, 0.1)"; }}
+          onMouseLeave={(e) => { e.currentTarget.style.background = "transparent"; }}
         >
           <LogOut size={18} />
           Logout
         </button>
 
         {/* Footer */}
-        <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(255,255,255,0.06)", textAlign: 'center' }}>
+        <div style={{ marginTop: 20, paddingTop: 16, borderTop: "1px solid rgba(15,23,42,0.06)", textAlign: "center" }}>
           <p style={{ fontSize: 10, color: "#64748b", lineHeight: 1.4 }}>
             Designed & Developed by<br />
             <strong style={{ color: "#94a3b8" }}>Veagle Space Technology Pvt. Ltd.</strong><br />
@@ -420,4 +215,3 @@ export default function Sidebar() {
     </>
   );
 }
-

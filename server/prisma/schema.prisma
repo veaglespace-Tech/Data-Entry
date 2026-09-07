@@ -27,9 +27,10 @@ model User {
   createdAt  DateTime @default(now())
   updatedAt  DateTime @updatedAt
 
-  forms        Form[]
-  transactions Transaction[]
-  plan         Plan?  @relation(fields: [planId], references: [id])
+  status     String   @default("ACTIVE") @db.VarChar(20) // "ACTIVE", "INACTIVE", "BANNED"
+  forms      Form[]
+  plan       Plan?    @relation(fields: [planId], references: [id])
+  fieldTemplateAssignments UserFieldTemplate[]
 
   @@map("users")
 }
@@ -49,7 +50,6 @@ model Plan {
   updatedAt   DateTime @updatedAt
 
   users        User[]
-  transactions Transaction[]
 
   @@map("plans")
 }
@@ -81,22 +81,62 @@ model Entry {
   @@map("entries")
 }
 
-model Transaction {
-  id           Int      @id @default(autoincrement())
-  txnid        String   @unique @db.VarChar(100)
-  userId       Int?
-  planId       Int
-  amount       Float
-  status       String   @default("PENDING") @db.VarChar(20) // PENDING, SUCCESS, FAILED
-  mihpayid     String?  @db.VarChar(100) // PayU transaction ID
-  tempUserData Json?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+model RegistrationRequest {
+  id        Int      @id @default(autoincrement())
+  name      String   @db.VarChar(100)
+  email     String   @unique @db.VarChar(255)
+  password  String   @db.VarChar(255)
+  mobile    String?  @db.VarChar(20)
+  address   String?  @db.Text
+  country   String?  @db.VarChar(100)
+  state     String?  @db.VarChar(100)
+  gender    String?  @db.VarChar(20)
+  planId    Int?     // Admin assigns plan during approval
+  status    String   @default("PENDING") @db.VarChar(20) // PENDING, APPROVED, REJECTED
+  adminNote String?  @db.Text // Admin can add a note when approving/rejecting
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  user User? @relation(fields: [userId], references: [id])
-  plan Plan  @relation(fields: [planId], references: [id])
+  @@map("registration_requests")
+}
 
-  @@map("transactions")
+// Admin creates field templates (sets of up to 12 fields)
+model AdminFieldTemplate {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(255)
+  description String?  @db.Text
+  fields      Json     // Array: [{ id, label, placeholder, type, required }] — up to 12
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  assignments UserFieldTemplate[]
+
+  @@map("admin_field_templates")
+}
+
+// Junction table: which templates are assigned to which users
+model UserFieldTemplate {
+  id         Int      @id @default(autoincrement())
+  userId     Int
+  templateId Int
+  assignedAt DateTime @default(now())
+
+  user     User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  template AdminFieldTemplate @relation(fields: [templateId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, templateId]) // Prevent duplicate assignments
+  @@map("user_field_templates")
+}
+
+model AdminFormTemplate {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(255)
+  description String?  @db.Text
+  fields      Json     // Array of field definitions: [{ name, label, type, required, options }]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("admin_form_templates")
 }
 
 model Setting {

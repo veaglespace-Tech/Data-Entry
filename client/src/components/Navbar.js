@@ -33,7 +33,7 @@ export default function Navbar() {
   const navLinks = [
     { name: "Home", path: "/" },
     { name: "About", path: "/about" },
-    { name: "Pricing", path: "/subscription" },
+    { name: "Contact", path: "/contact" },
   ];
 
   return (
@@ -74,8 +74,8 @@ export default function Navbar() {
           >
             <div
               style={{
-                width: 50,
-                height: 50,
+                width: 140,
+                height: 60,
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
@@ -94,7 +94,7 @@ export default function Navbar() {
                 fontSize: 22,
                 fontWeight: 800,
                 letterSpacing: "-0.03em",
-                color: "#0f172a",
+                color: "var(--foreground)",
               }}
             >
               DataVault
@@ -114,16 +114,16 @@ export default function Navbar() {
                       textDecoration: "none",
                       fontSize: 14,
                       fontWeight: isActive ? 700 : 600,
-                      color: isActive ? "#2563eb" : "#64748b",
+                      color: isActive ? "var(--primary)" : "var(--text-muted)",
                       position: "relative",
                       transition: "color 0.2s ease",
                       padding: "6px 0",
                     }}
                     onMouseEnter={(e) => {
-                      if (!isActive) e.currentTarget.style.color = "#0f172a";
+                      if (!isActive) e.currentTarget.style.color = "var(--foreground)";
                     }}
                     onMouseLeave={(e) => {
-                      if (!isActive) e.currentTarget.style.color = "#64748b";
+                      if (!isActive) e.currentTarget.style.color = "var(--text-muted)";
                     }}
                   >
                     {link.name}
@@ -168,7 +168,7 @@ export default function Navbar() {
                   <div style={{ width: 26, height: 26, borderRadius: '50%', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 11, fontWeight: 800 }}>
                     {user.name.charAt(0).toUpperCase()}
                   </div>
-                  <span style={{ fontSize: 14, fontWeight: 600, color: "#0f172a" }}>Dashboard</span>
+                  <span style={{ fontSize: 14, fontWeight: 600, color: "var(--foreground)" }}>Dashboard</span>
                 </Link>
                 <button
                   onClick={handleLogout}
@@ -178,7 +178,7 @@ export default function Navbar() {
                     gap: 6,
                     background: "transparent",
                     border: "none",
-                    color: "#64748b",
+                    color: "var(--text-muted)",
                     fontSize: 14,
                     fontWeight: 600,
                     cursor: "pointer",
@@ -192,7 +192,7 @@ export default function Navbar() {
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.background = "transparent";
-                    e.currentTarget.style.color = "#64748b";
+                    e.currentTarget.style.color = "var(--text-muted)";
                   }}
                 >
                   <LogOut size={16} /> Logout
@@ -232,19 +232,19 @@ export default function Navbar() {
                     fontSize: 14,
                     fontWeight: 700,
                     color: "white",
-                    background: "linear-gradient(135deg, #2563eb, #3b82f6)",
+                    background: "linear-gradient(135deg, #f43f5e, #8b5cf6)",
                     padding: "10px 20px",
                     borderRadius: 12,
-                    boxShadow: "0 4px 14px rgba(37,99,235,0.25)",
+                    boxShadow: "0 4px 14px rgba(139,92,246,0.25)",
                     transition: "all 0.25s cubic-bezier(0.16, 1, 0.3, 1)",
                   }}
                   onMouseEnter={(e) => {
                     e.currentTarget.style.transform = "translateY(-2px)";
-                    e.currentTarget.style.boxShadow = "0 6px 20px rgba(37,99,235,0.35)";
+                    e.currentTarget.style.boxShadow = "0 6px 20px rgba(139,92,246,0.35)";
                   }}
                   onMouseLeave={(e) => {
                     e.currentTarget.style.transform = "translateY(0)";
-                    e.currentTarget.style.boxShadow = "0 4px 14px rgba(37,99,235,0.25)";
+                    e.currentTarget.style.boxShadow = "0 4px 14px rgba(139,92,246,0.25)";
                   }}
                 >
                   Get Started <ChevronRight size={16} />
@@ -261,7 +261,7 @@ export default function Navbar() {
               display: "none",
               background: "transparent",
               border: "none",
-              color: "#0f172a",
+              color: "var(--foreground)",
               cursor: "pointer",
               padding: 8,
               borderRadius: 8,
@@ -304,7 +304,7 @@ export default function Navbar() {
                 textDecoration: "none",
                 fontSize: 16,
                 fontWeight: 600,
-                color: "#0f172a",
+                color: "var(--foreground)",
                 padding: "8px 0",
                 borderBottom: "1px solid rgba(15,23,42,0.04)",
               }}
@@ -315,13 +315,13 @@ export default function Navbar() {
 
           {user ? (
             <div style={{ display: "flex", flexDirection: "column", gap: 12, marginTop: 12 }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', background: 'rgba(15,23,42,0.03)', borderRadius: 12 }}>
-                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #3b82f6, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 13, fontWeight: 800 }}>
+              <div style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '12px', background: 'rgba(139,92,246,0.05)', borderRadius: 12 }}>
+                <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'linear-gradient(135deg, #f43f5e, #8b5cf6)', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', fontSize: 13, fontWeight: 800 }}>
                   {user.name.charAt(0).toUpperCase()}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <p style={{ fontSize: 14, fontWeight: 700, color: '#0f172a', margin: 0 }}>{user.name}</p>
-                  <p style={{ fontSize: 12, color: '#64748b', margin: 0 }}>{user.email}</p>
+                  <p style={{ fontSize: 14, fontWeight: 700, color: 'var(--foreground)', margin: 0 }}>{user.name}</p>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', margin: 0 }}>{user.email}</p>
                 </div>
               </div>
               <Link
@@ -334,7 +334,7 @@ export default function Navbar() {
                   gap: 8,
                   padding: "12px",
                   background: "#f1f5f9",
-                  color: "#0f172a",
+                  color: "var(--foreground)",
                   borderRadius: 12,
                   textDecoration: "none",
                   fontWeight: 600,
@@ -373,7 +373,7 @@ export default function Navbar() {
                   padding: "12px",
                   textAlign: "center",
                   background: "#f1f5f9",
-                  color: "#0f172a",
+                  color: "var(--foreground)",
                   borderRadius: 12,
                   textDecoration: "none",
                   fontWeight: 700,

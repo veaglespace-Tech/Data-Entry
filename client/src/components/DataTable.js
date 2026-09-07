@@ -38,7 +38,7 @@ export default function DataTable({
                 left: 12,
                 top: "50%",
                 transform: "translateY(-50%)",
-                color: "#64748b",
+                color: "var(--text-muted)",
               }}
             />
             <input
@@ -69,7 +69,7 @@ export default function DataTable({
         style={{
           overflow: "auto",
           borderRadius: 14,
-          border: "1px solid rgba(99, 102, 241, 0.1)",
+          border: "1px solid var(--surface-border)",
         }}
       >
         <table className="data-table">
@@ -90,7 +90,7 @@ export default function DataTable({
                   style={{
                     textAlign: "center",
                     padding: 48,
-                    color: "#64748b",
+                    color: "var(--text-muted)",
                     fontSize: 14,
                   }}
                 >
@@ -100,7 +100,7 @@ export default function DataTable({
             ) : (
               data.map((row, index) => (
                 <tr key={row.id}>
-                  <td style={{ color: "#64748b", fontSize: 13 }}>
+                  <td style={{ color: "var(--text-muted)", fontSize: 13 }}>
                     {pagination
                       ? (pagination.page - 1) * pagination.limit + index + 1
                       : index + 1}
@@ -123,12 +123,12 @@ export default function DataTable({
                       <button
                         onClick={() => onEdit(row)}
                         style={{
-                          background: "rgba(99, 102, 241, 0.1)",
-                          border: "1px solid rgba(99, 102, 241, 0.2)",
+                          background: "rgba(139, 92, 246, 0.1)",
+                          border: "1px solid rgba(139, 92, 246, 0.2)",
                           borderRadius: 8,
                           padding: "6px 8px",
                           cursor: "pointer",
-                          color: "#818cf8",
+                          color: "#8b5cf6",
                           display: "flex",
                           transition: "all 0.2s",
                         }}
@@ -164,17 +164,17 @@ export default function DataTable({
       {/* Pagination */}
       {pagination && pagination.totalPages > 1 && (
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <p style={{ fontSize: 13, color: "#64748b" }}>
+          <p style={{ fontSize: 13, color: "var(--text-muted)" }}>
             Showing{" "}
-            <span style={{ color: "#94a3b8", fontWeight: 600 }}>
+            <span style={{ color: "var(--foreground)", fontWeight: 600 }}>
               {(pagination.page - 1) * pagination.limit + 1}
             </span>{" "}
             to{" "}
-            <span style={{ color: "#94a3b8", fontWeight: 600 }}>
+            <span style={{ color: "var(--foreground)", fontWeight: 600 }}>
               {Math.min(pagination.page * pagination.limit, pagination.total)}
             </span>{" "}
             of{" "}
-            <span style={{ color: "#94a3b8", fontWeight: 600 }}>
+            <span style={{ color: "var(--foreground)", fontWeight: 600 }}>
               {pagination.total}
             </span>{" "}
             entries
@@ -206,7 +206,7 @@ export default function DataTable({
                     <span
                       style={{
                         padding: "6px 4px",
-                        color: "#64748b",
+                        color: "var(--text-muted)",
                         fontSize: 13,
                       }}
                     >
@@ -221,13 +221,13 @@ export default function DataTable({
                       borderRadius: 8,
                       border:
                         p === pagination.page
-                          ? "1px solid rgba(99, 102, 241, 0.4)"
-                          : "1px solid rgba(99, 102, 241, 0.15)",
+                          ? "1px solid rgba(139, 92, 246, 0.4)"
+                          : "1px solid var(--surface-border)",
                       background:
                         p === pagination.page
-                          ? "linear-gradient(135deg, #6366f1, #8b5cf6)"
-                          : "rgba(15, 11, 46, 0.4)",
-                      color: p === pagination.page ? "#fff" : "#94a3b8",
+                          ? "linear-gradient(135deg, #f43f5e, #8b5cf6)"
+                          : "#ffffff",
+                      color: p === pagination.page ? "#fff" : "var(--text-muted)",
                       cursor: "pointer",
                       fontSize: 13,
                       fontWeight: p === pagination.page ? 700 : 500,
