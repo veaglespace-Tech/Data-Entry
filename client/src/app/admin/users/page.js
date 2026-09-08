@@ -48,7 +48,7 @@ export default function AdminUsersPage() {
     planExpiresAt: ""
   });
 
-  const users = data?.data || [];
+  const users = (data?.data || []).filter(u => u.id !== user?.id).sort((a, b) => a.id - b.id);
   const loading = authLoading || isLoading;
 
   const { data: templatesData } = useGetFieldTemplatesQuery(undefined, { skip: !isAdmin });
@@ -288,9 +288,9 @@ export default function AdminUsersPage() {
                         </td>
                       </tr>
                     ) : (
-                      users.map((u) => (
+                      users.map((u, index) => (
                         <tr key={u.id}>
-                          <td style={{ color: "#64748b", fontWeight: 600 }}>#{u.id}</td>
+                          <td style={{ color: "#64748b", fontWeight: 600 }}>#{index + 1}</td>
                           <td>
                             <Link href={`/admin/users/${u.id}`} style={{ textDecoration: 'none', display: 'block' }}>
                               <p style={{ fontWeight: 700, color: "#0f172a", transition: 'color 0.2s', ':hover': { color: '#3b82f6' } }}>

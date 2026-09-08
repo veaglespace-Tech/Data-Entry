@@ -504,7 +504,7 @@ router.get(
           },
         },
       },
-      orderBy: { createdAt: "desc" },
+      orderBy: { id: "asc" },
     });
 
     // Get entry counts for each user
