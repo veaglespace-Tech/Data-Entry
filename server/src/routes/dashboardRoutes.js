@@ -338,4 +338,198 @@ router.get(
   })
 );
 
+// @route   GET /api/dashboard/analytics
+// @desc    Admin analytics — revenue, plan sales, net worth
+// @access  Private (Admin)
+router.get(
+  "/analytics",
+  asyncHandler(async (req, res) => {
+    if (req.user.role !== "ADMIN") {
+      res.status(403);
+      throw new Error("Admin access required");
+    }
+
+    // All plans with price info
+    const plans = await prisma.plan.findMany({
+      orderBy: { displayOrder: "asc" },
+    });
+
+    // Users with plan info
+    const usersWithPlans = await prisma.user.findMany({
+      where: { planId: { not: null } },
+      select: {
+        id: true,
+        planId: true,
+        planStatus: true,
+        planExpiresAt: true,
+        createdAt: true,
+        plan: { select: { id: true, name: true, price: true, period: true } },
+      },
+    });
+
+    // Plan-wise breakdown
+    const planBreakdown = plans.map((plan) => {
+      const planUsers = usersWithPlans.filter((u) => u.planId === plan.id);
+      const activeUsers = planUsers.filter((u) => u.planStatus === "ACTIVE");
+      const revenue = planUsers.length * plan.price;
+      return {
+        id: plan.id,
+        name: plan.name,
+        price: plan.price,
+        period: plan.period,
+        totalUsers: planUsers.length,
+        activeUsers: activeUsers.length,
+        revenue,
+      };
+    });
+
+    // Totals
+    const totalRevenue = planBreakdown.reduce((sum, p) => sum + p.revenue, 0);
+    const totalActiveSubscriptions = usersWithPlans.filter((u) => u.planStatus === "ACTIVE").length;
+    const totalExpiredSubscriptions = usersWithPlans.filter((u) => u.planStatus === "EXPIRED").length;
+    const totalUsersWithPlan = usersWithPlans.length;
+    const avgPlanValue = totalUsersWithPlan > 0 ? Math.round(totalRevenue / totalUsersWithPlan) : 0;
+
+    // Upgrade requests from settings
+    let upgradeRequests = [];
+    try {
+      const setting = await prisma.setting.findUnique({ where: { key: "UPGRADE_REQUESTS" } });
+      if (setting && setting.value) upgradeRequests = JSON.parse(setting.value);
+    } catch { upgradeRequests = []; }
+
+    res.json({
+      success: true,
+      data: {
+        totalRevenue,
+        totalActiveSubscriptions,
+        totalExpiredSubscriptions,
+        totalUsersWithPlan,
+        avgPlanValue,
+        planBreakdown: planBreakdown.filter((p) => p.totalUsers > 0),
+        allPlanBreakdown: planBreakdown,
+        upgradeRequests,
+      },
+    });
+  })
+);
+
+// @route   GET /api/dashboard/upgrade-requests
+// @desc    Get all pending upgrade requests (Admin only)
+// @access  Private (Admin)
+router.get(
+  "/upgrade-requests",
+  asyncHandler(async (req, res) => {
+    if (req.user.role !== "ADMIN") {
+      res.status(403);
+      throw new Error("Admin access required");
+    }
+    let upgradeRequests = [];
+    try {
+      const setting = await prisma.setting.findUnique({ where: { key: "UPGRADE_REQUESTS" } });
+      if (setting && setting.value) upgradeRequests = JSON.parse(setting.value);
+    } catch { upgradeRequests = []; }
+
+    res.json({ success: true, data: upgradeRequests });
+  })
+);
+
+// @route   DELETE /api/dashboard/upgrade-requests/:id
+// @desc    Dismiss/delete an upgrade request (Admin)
+// @access  Private (Admin)
+router.delete(
+  "/upgrade-requests/:id",
+  asyncHandler(async (req, res) => {
+    if (req.user.role !== "ADMIN") {
+      res.status(403);
+      throw new Error("Admin access required");
+    }
+    const reqId = req.params.id;
+    let upgradeRequests = [];
+    try {
+      const setting = await prisma.setting.findUnique({ where: { key: "UPGRADE_REQUESTS" } });
+      if (setting && setting.value) upgradeRequests = JSON.parse(setting.value);
+    } catch { upgradeRequests = []; }
+
+    upgradeRequests = upgradeRequests.filter((r) => r.id !== reqId);
+
+    await prisma.setting.upsert({
+      where: { key: "UPGRADE_REQUESTS" },
+      update: { value: JSON.stringify(upgradeRequests) },
+      create: { key: "UPGRADE_REQUESTS", value: JSON.stringify(upgradeRequests) },
+    });
+
+    res.json({ success: true, message: "Upgrade request dismissed" });
+  })
+);
+
+// @route   POST /api/dashboard/upgrade-request
+// @desc    User submits a plan upgrade request
+// @access  Private (User)
+router.post(
+  "/upgrade-request",
+  asyncHandler(async (req, res) => {
+    const { desiredPlanId, message } = req.body;
+    const userId = req.user.id;
+
+    if (!desiredPlanId) {
+      res.status(400);
+      throw new Error("Please select a plan to upgrade to");
+    }
+
+    const plan = await prisma.plan.findUnique({ where: { id: parseInt(desiredPlanId) } });
+    if (!plan) {
+      res.status(404);
+      throw new Error("Selected plan not found");
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      include: { plan: true },
+    });
+
+    // Load existing requests
+    let upgradeRequests = [];
+    try {
+      const setting = await prisma.setting.findUnique({ where: { key: "UPGRADE_REQUESTS" } });
+      if (setting && setting.value) upgradeRequests = JSON.parse(setting.value);
+    } catch { upgradeRequests = []; }
+
+    // Check if user already has a pending request
+    const existing = upgradeRequests.find((r) => r.userId === userId && r.status === "PENDING");
+    if (existing) {
+      res.status(400);
+      throw new Error("You already have a pending upgrade request. Please wait for admin review.");
+    }
+
+    const newRequest = {
+      id: `upg_${Date.now()}_${userId}`,
+      userId,
+      userName: user.name,
+      userEmail: user.email,
+      currentPlanId: user.planId,
+      currentPlanName: user.plan?.name || "None",
+      desiredPlanId: parseInt(desiredPlanId),
+      desiredPlanName: plan.name,
+      desiredPlanPrice: plan.price,
+      message: message || "",
+      status: "PENDING",
+      createdAt: new Date().toISOString(),
+    };
+
+    upgradeRequests.unshift(newRequest);
+
+    await prisma.setting.upsert({
+      where: { key: "UPGRADE_REQUESTS" },
+      update: { value: JSON.stringify(upgradeRequests) },
+      create: { key: "UPGRADE_REQUESTS", value: JSON.stringify(upgradeRequests) },
+    });
+
+    res.json({
+      success: true,
+      message: `Upgrade request for "${plan.name}" submitted successfully! Admin will review shortly.`,
+    });
+  })
+);
+
 module.exports = router;
+

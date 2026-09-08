@@ -27,6 +27,7 @@ export const apiSlice = createApi({
     'Auth', 'Form', 'Entry', 'User', 'Stats',
     'AdminForms', 'AdminPlans', 'Settings',
     'RegistrationRequests', 'FieldTemplates', 'UserTemplates', 'MyEntries',
+    'Analytics', 'UpgradeRequests',
   ],
   endpoints: (builder) => ({
 
@@ -62,6 +63,35 @@ export const apiSlice = createApi({
     getDashboardStats: builder.query({
       query: () => '/dashboard/stats',
       providesTags: ['Stats'],
+    }),
+
+    // Admin: Analytics data
+    getAnalytics: builder.query({
+      query: () => '/dashboard/analytics',
+      providesTags: ['Analytics'],
+    }),
+
+    // Admin: Upgrade requests from users
+    getUpgradeRequests: builder.query({
+      query: () => '/dashboard/upgrade-requests',
+      providesTags: ['UpgradeRequests'],
+    }),
+    dismissUpgradeRequest: builder.mutation({
+      query: (id) => ({
+        url: `/dashboard/upgrade-requests/${id}`,
+        method: 'DELETE',
+      }),
+      invalidatesTags: ['UpgradeRequests'],
+    }),
+
+    // User: Submit upgrade request
+    submitUpgradeRequest: builder.mutation({
+      query: (data) => ({
+        url: '/dashboard/upgrade-request',
+        method: 'POST',
+        body: data,
+      }),
+      invalidatesTags: ['UpgradeRequests'],
     }),
 
     // User: get assigned field templates
@@ -238,35 +268,6 @@ export const apiSlice = createApi({
       providesTags: (result, error, userId) => [{ type: 'UserTemplates', id: userId }],
     }),
 
-    // ── ADMIN: PLANS ───────────────────────────────────
-    getAdminPlans: builder.query({
-      query: () => '/admin/plans',
-      providesTags: ['Plan'],
-    }),
-    createAdminPlan: builder.mutation({
-      query: (data) => ({
-        url: '/admin/plans',
-        method: 'POST',
-        body: data,
-      }),
-      invalidatesTags: ['Plan'],
-    }),
-    updateAdminPlan: builder.mutation({
-      query: ({ id, ...data }) => ({
-        url: `/admin/plans/${id}`,
-        method: 'PUT',
-        body: data,
-      }),
-      invalidatesTags: ['Plan'],
-    }),
-    deleteAdminPlan: builder.mutation({
-      query: (id) => ({
-        url: `/admin/plans/${id}`,
-        method: 'DELETE',
-      }),
-      invalidatesTags: ['Plan'],
-    }),
-
     // ── ADMIN: USERS ───────────────────────────────────
     getUsers: builder.query({
       query: (search = '') => `/admin/users${search ? `?search=${search}` : ''}`,
@@ -366,6 +367,10 @@ export const {
   useGetMeQuery,
   // Dashboard
   useGetDashboardStatsQuery,
+  useGetAnalyticsQuery,
+  useGetUpgradeRequestsQuery,
+  useDismissUpgradeRequestMutation,
+  useSubmitUpgradeRequestMutation,
   useGetMyTemplatesQuery,
   useGetMyEntriesQuery,
   useExportMyEntriesQuery,
