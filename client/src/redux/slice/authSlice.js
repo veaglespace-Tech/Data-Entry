@@ -1,10 +1,24 @@
 import { createSlice } from '@reduxjs/toolkit';
 
+// Read auth from localStorage synchronously at store init (SSR-safe)
+const loadAuthFromStorage = () => {
+  if (typeof window === 'undefined') return { user: null, token: null, isAuthenticated: false };
+  try {
+    const token = localStorage.getItem('token');
+    const userStr = localStorage.getItem('user');
+    if (token && userStr) {
+      return { user: JSON.parse(userStr), token, isAuthenticated: true };
+    }
+  } catch {
+    localStorage.removeItem('token');
+    localStorage.removeItem('user');
+  }
+  return { user: null, token: null, isAuthenticated: false };
+};
+
 const initialState = {
-  user: null,
-  token: null,
-  isAuthenticated: false,
-  loading: true,
+  ...loadAuthFromStorage(),
+  loading: false,
 };
 
 const authSlice = createSlice({
@@ -34,28 +48,10 @@ const authSlice = createSlice({
         localStorage.removeItem('user');
       }
     },
-    initializeAuth: (state) => {
-      if (typeof window !== 'undefined') {
-        const token = localStorage.getItem('token');
-        const userStr = localStorage.getItem('user');
-        
-        if (token && userStr) {
-          try {
-            state.user = JSON.parse(userStr);
-            state.token = token;
-            state.isAuthenticated = true;
-          } catch {
-            localStorage.removeItem('token');
-            localStorage.removeItem('user');
-          }
-        }
-      }
-      state.loading = false;
-    }
   },
 });
 
-export const { setCredentials, logout, initializeAuth } = authSlice.actions;
+export const { setCredentials, logout } = authSlice.actions;
 
 export const selectCurrentUser = (state) => state.auth.user;
 export const selectCurrentToken = (state) => state.auth.token;
