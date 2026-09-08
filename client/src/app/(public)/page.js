@@ -2,9 +2,9 @@
 
 import Link from "next/link";
 import { useSelector } from "react-redux";
-import { selectCurrentUser, selectAuthLoading } from "@/redux/slice/authSlice";
+import { selectCurrentUser } from "@/redux/slice/authSlice";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import {
   Database, FileText, BarChart3, Download,
   Shield, Zap, ArrowRight, Search, Layers, CheckCircle,
@@ -27,16 +27,21 @@ const steps = [
 
 export default function LandingPage() {
   const user = useSelector(selectCurrentUser);
-  const loading = useSelector(selectAuthLoading);
   const router = useRouter();
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    if (!loading && user) {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    if (mounted && user) {
       router.push("/dashboard");
     }
-  }, [user, loading, router]);
+  }, [user, mounted, router]);
 
-  if (loading) return null;
+  // Don't render until client-side hydration is done
+  if (!mounted) return null;
 
   return (
     <>
