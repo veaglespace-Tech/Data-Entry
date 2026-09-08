@@ -34,8 +34,7 @@ jobs:
             npm ci
 
             echo "Running Prisma migrations..."
-            npx prisma migrate
-            npx prisma db push
+            npx prisma migrate deploy
 
             echo "Installing client dependencies..."
             cd ../client
