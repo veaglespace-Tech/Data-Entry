@@ -95,6 +95,7 @@ export default function AdminUsersPage() {
       mobile: userToEdit.mobile || "",
       planId: userToEdit.planId || "",
       planStatus: userToEdit.planStatus || "INACTIVE",
+      planStartsAt: userToEdit.planStartsAt ? new Date(userToEdit.planStartsAt).toISOString().slice(0, 16) : "",
       planExpiresAt: userToEdit.planExpiresAt ? new Date(userToEdit.planExpiresAt).toISOString().slice(0, 16) : ""
     });
     setIsEditModalOpen(true);
@@ -117,8 +118,10 @@ export default function AdminUsersPage() {
           expiry.setDate(expiry.getDate() + days);
           next.planExpiresAt = expiry.toISOString().slice(0, 16);
           next.planStatus = "ACTIVE"; // auto-set to active if assigning a plan
+          if (!next.planStartsAt) next.planStartsAt = new Date().toISOString().slice(0, 16);
         } else {
           next.planExpiresAt = "";
+          if (!next.planStartsAt) next.planStartsAt = new Date().toISOString().slice(0, 16);
         }
       }
       return next;
@@ -137,6 +140,7 @@ export default function AdminUsersPage() {
       };
 
       if (editForm.planId) payload.planId = parseInt(editForm.planId);
+      if (editForm.planStartsAt) payload.planStartsAt = new Date(editForm.planStartsAt).toISOString();
       if (editForm.planExpiresAt) payload.planExpiresAt = new Date(editForm.planExpiresAt).toISOString();
 
       await updateUserDetails(payload).unwrap();
@@ -429,15 +433,28 @@ export default function AdminUsersPage() {
                       </div>
                     </div>
                     
-                    <div className="form-group" style={{ marginBottom: 0, marginTop: 24 }}>
-                      <label className="form-label">Custom Expiry Date</label>
-                      <input 
-                        type="datetime-local" 
-                        className="form-control" 
-                        value={editForm.planExpiresAt} 
-                        onChange={e => setEditForm({...editForm, planExpiresAt: e.target.value})} 
-                      />
-                      <p style={{ fontSize: 12, color: '#64748b', marginTop: 8 }}>Leave blank for lifetime access, or specify an exact end date.</p>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 24, marginTop: 24 }}>
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Plan Start Date (Optional)</label>
+                        <input 
+                          type="datetime-local" 
+                          className="form-control" 
+                          value={editForm.planStartsAt} 
+                          onChange={e => setEditForm({...editForm, planStartsAt: e.target.value})} 
+                        />
+                        <p style={{ fontSize: 12, color: '#64748b', marginTop: 8 }}>Leave blank to start immediately.</p>
+                      </div>
+                      
+                      <div className="form-group" style={{ marginBottom: 0 }}>
+                        <label className="form-label">Custom Expiry Date</label>
+                        <input 
+                          type="datetime-local" 
+                          className="form-control" 
+                          value={editForm.planExpiresAt} 
+                          onChange={e => setEditForm({...editForm, planExpiresAt: e.target.value})} 
+                        />
+                        <p style={{ fontSize: 12, color: '#64748b', marginTop: 8 }}>Leave blank for lifetime access.</p>
+                      </div>
                     </div>
                   </div>
 

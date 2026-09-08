@@ -19,6 +19,7 @@ model User {
   role       String   @default("USER") @db.VarChar(20) // "USER" or "ADMIN"
   planId       Int?
   planStatus   String   @default("INACTIVE") @db.VarChar(20) // "INACTIVE", "ACTIVE", or "EXPIRED"
+  planStartsAt DateTime?
   planExpiresAt DateTime?
   address    String?  @db.Text
   country    String?  @db.VarChar(100)

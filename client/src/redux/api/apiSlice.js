@@ -94,6 +94,12 @@ export const apiSlice = createApi({
       invalidatesTags: ['UpgradeRequests'],
     }),
 
+    // User: get available plans
+    getDashboardPlans: builder.query({
+      query: () => '/dashboard/plans',
+      providesTags: ['Plan'],
+    }),
+
     // User: get assigned field templates
     getMyTemplates: builder.query({
       query: () => '/dashboard/my-templates',
@@ -371,6 +377,7 @@ export const {
   useGetUpgradeRequestsQuery,
   useDismissUpgradeRequestMutation,
   useSubmitUpgradeRequestMutation,
+  useGetDashboardPlansQuery,
   useGetMyTemplatesQuery,
   useGetMyEntriesQuery,
   useExportMyEntriesQuery,

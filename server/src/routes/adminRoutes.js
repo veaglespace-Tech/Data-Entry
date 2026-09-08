@@ -493,6 +493,7 @@ router.get(
         role: true,
         planId: true,
         planStatus: true,
+        planStartsAt: true,
         planExpiresAt: true,
         status: true,
         createdAt: true,
@@ -640,7 +641,7 @@ router.put(
   "/users/:id",
   asyncHandler(async (req, res) => {
     const userId = parseInt(req.params.id);
-    const { name, email, mobile, planId, planStatus, planExpiresAt, status } = req.body;
+    const { name, email, mobile, planId, planStatus, planStartsAt, planExpiresAt, status } = req.body;
 
     const user = await prisma.user.findUnique({ where: { id: userId } });
     if (!user) {
@@ -658,6 +659,9 @@ router.put(
     }
     if (planStatus !== undefined) {
       updateData.planStatus = planStatus;
+    }
+    if (planStartsAt !== undefined) {
+      updateData.planStartsAt = planStartsAt ? new Date(planStartsAt) : null;
     }
     if (planExpiresAt !== undefined) {
       updateData.planExpiresAt = planExpiresAt ? new Date(planExpiresAt) : null;
@@ -684,6 +688,7 @@ router.put(
         role: true,
         planId: true,
         planStatus: true,
+        planStartsAt: true,
         planExpiresAt: true,
         status: true,
       },

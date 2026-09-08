@@ -9,6 +9,20 @@ const prisma = new PrismaClient();
 // All dashboard routes are protected
 router.use(protect);
 
+// @route   GET /api/dashboard/plans
+// @desc    Get all active plans for users
+// @access  Private
+router.get(
+  "/plans",
+  asyncHandler(async (req, res) => {
+    const plans = await prisma.plan.findMany({
+      where: { isActive: true },
+      orderBy: { displayOrder: "asc" },
+    });
+    res.json({ success: true, data: plans });
+  })
+);
+
 // @route   GET /api/dashboard/stats
 // @desc    Get dashboard statistics (admin: global, user: personal)
 // @access  Private

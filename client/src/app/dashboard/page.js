@@ -14,6 +14,7 @@ import {
   useSubmitUpgradeRequestMutation,
   useGetUpgradeRequestsQuery,
   useDismissUpgradeRequestMutation,
+  useGetDashboardPlansQuery,
 } from "@/redux/api/apiSlice";
 import Sidebar from "@/components/Sidebar";
 import StatsCard from "@/components/StatsCard";
@@ -248,7 +249,7 @@ function AdminAnalyticsTab({ isAdmin }) {
 // User Subscription Tab
 // ─────────────────────────────────────────────────────────────────
 function UserSubscriptionTab({ user }) {
-  const { data: plansData } = useGetAdminPlansQuery();
+  const { data: plansData } = useGetDashboardPlansQuery();
   const plans = plansData?.data || [];
 
   const [selectedPlanId, setSelectedPlanId] = useState("");
@@ -325,6 +326,12 @@ function UserSubscriptionTab({ user }) {
 
               {/* Date info */}
               <div style={{ display: "flex", flexDirection: "column", gap: 10, marginBottom: 20 }}>
+                {user?.planStartsAt && (
+                  <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
+                    <span style={{ color: "#64748b" }}>Starts on</span>
+                    <span style={{ fontWeight: 700, color: "#0f172a" }}>{new Date(user.planStartsAt).toLocaleDateString("en-IN", { day: "numeric", month: "long", year: "numeric" })}</span>
+                  </div>
+                )}
                 {expiresAt && (
                   <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13 }}>
                     <span style={{ color: "#64748b" }}>Expires on</span>

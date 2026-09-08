@@ -129,6 +129,15 @@ router.post(
       throw new Error("Invalid email or password");
     }
 
+    // Check plan start date
+    if (user.planStartsAt && new Date() < new Date(user.planStartsAt)) {
+      res.status(403);
+      const dateStr = new Date(user.planStartsAt).toLocaleDateString("en-IN", {
+        day: "numeric", month: "long", year: "numeric"
+      });
+      throw new Error(`Your plan starts on ${dateStr}. You can login from that day onwards.`);
+    }
+
     res.json({
       success: true,
       data: {
@@ -139,11 +148,13 @@ router.post(
         role: user.role,
         planId: user.planId,
         planStatus: user.planStatus,
+        planStartsAt: user.planStartsAt,
         planExpiresAt: user.planExpiresAt,
         address: user.address,
         country: user.country,
         state: user.state,
         gender: user.gender,
+        plan: user.plan,
         token: generateToken(user.id),
       },
     });
